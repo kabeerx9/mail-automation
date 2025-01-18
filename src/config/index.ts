@@ -1,0 +1,43 @@
+import dotenv from 'dotenv';
+import { z } from 'zod';
+
+dotenv.config();
+
+const envSchema = z.object({
+  PORT: z.string().default('3000'),
+  NODE_ENV: z.enum(['development', 'production']).default('development'),
+  SMTP_HOST: z.string(),
+  SMTP_PORT: z.string().transform(Number),
+  SMTP_USER: z.string(),
+  SMTP_PASS: z.string(),
+  EMAIL_FROM: z.string(),
+  EMAIL_SUBJECT: z.string(),
+  EMAIL_RATE_LIMIT: z.string().transform(Number).default('50'),
+});
+
+const config = envSchema.parse(process.env);
+
+export default {
+  port: config.PORT,
+  isDev: config.NODE_ENV === 'development',
+  smtp: {
+    host: config.SMTP_HOST,
+    port: config.SMTP_PORT,
+    auth: {
+      user: config.SMTP_USER,
+      pass: config.SMTP_PASS,
+    },
+  },
+  email: {
+    from: config.EMAIL_FROM,
+    subject: config.EMAIL_SUBJECT,
+    rateLimit: config.EMAIL_RATE_LIMIT,
+  },
+  paths: {
+    csv: 'recruiters.csv',
+    logs: {
+      error: 'logs/error.log',
+      combined: 'logs/combined.log',
+    },
+  },
+};
