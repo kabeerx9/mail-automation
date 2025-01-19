@@ -11,7 +11,7 @@ const app = express();
 app.use(express.json());
 
 // Serve static files
-app.use(express.static('public'));
+// app.use(express.static('public'));
 
 // Health check endpoint
 app.get('/health', (_, res) => res.send('OK'));
@@ -23,7 +23,7 @@ async function bootstrap() {
     await emailService.init();
 
     const csvService = new FileCSVService();
-    
+
     // Initialize controller
     const emailController = new EmailController(emailService, csvService);
 
