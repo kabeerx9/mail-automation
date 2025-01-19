@@ -63,25 +63,30 @@ export class EmailController {
       logger.info(`Processing ${recruiters.length} recruiters`);
 
       for (const recruiter of recruiters) {
-        if (recruiter.Status === 'Sent') {
-          continue;
-        }
+        // if (recruiter.Status === 'Sent') {
+        //   continue;
+        // }
 
         try {
+          console.log("Recruiter: ", recruiter);
+          console.log("Recruiter.ReachOutCount: ", recruiter.ReachOutCount);
+          console.log(recruiter.ReachOutCount === 0)
           if (recruiter.ReachOutCount === 0) {
+            console.log("Sending initial email to ", recruiter.Email);
             await this.emailService.sendEmail(
               recruiter.Email,
               config.email.subject,
               this.generateEmailBody(recruiter.Name , recruiter.Company , recruiter.Role)
             );
           } else {
+            console.log("Sending follow up email to ", recruiter.Email);
             await this.emailService.sendEmail(
               recruiter.Email,
               config.email.subject,
               this.generateFollowUpEmailBody(recruiter.Name , recruiter.Company , recruiter.Role)
             );
           }
-
+          console.log("Email sent to ", recruiter.Email);
           recruiter.Status = 'Sent';
           recruiter.ReachOutCount += 1;
           recruiter.LastContactDate = new Date().toISOString();

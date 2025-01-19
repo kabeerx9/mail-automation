@@ -30,7 +30,7 @@ export class NodemailerService implements EmailService {
       const now = Date.now();
       const timeSinceLastEmail = now - this.lastSentTime;
       if (timeSinceLastEmail < this.minDelay) {
-        await new Promise(resolve => 
+        await new Promise(resolve =>
           setTimeout(resolve, this.minDelay - timeSinceLastEmail)
         );
       }
