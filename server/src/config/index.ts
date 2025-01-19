@@ -13,12 +13,14 @@ const envSchema = z.object({
   EMAIL_FROM: z.string(),
   EMAIL_SUBJECT: z.string(),
   EMAIL_RATE_LIMIT: z.string().transform(Number).default('50'),
+  JWT_SECRET: z.string(),
 });
 
 const config = envSchema.parse(process.env);
 
 export default {
   port: config.PORT,
+
   isDev: config.NODE_ENV === 'development',
   smtp: {
     host: config.SMTP_HOST,
@@ -40,4 +42,5 @@ export default {
       combined: 'logs/combined.log',
     },
   },
+  jwt_secret: config.JWT_SECRET,
 };

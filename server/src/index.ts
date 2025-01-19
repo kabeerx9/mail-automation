@@ -5,6 +5,8 @@ import { EmailController } from './controllers/email.controller';
 import { createEmailRouter } from './routes/email.routes';
 import config from './config';
 import logger from './utils/logger';
+import { AuthController } from './controllers/auth.controller';
+import createAuthRouter from './routes/auth.routes';
 
 const app = express();
 
@@ -26,9 +28,11 @@ async function bootstrap() {
 
     // Initialize controller
     const emailController = new EmailController(emailService, csvService);
+    const authController = new AuthController();
 
     // Setup routes
     app.use('/api/emails', createEmailRouter(emailController));
+    app.use('/api/auth', createAuthRouter(authController));
 
     // Error handling middleware
     app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
