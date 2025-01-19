@@ -1,90 +1,146 @@
-# Email Automation Script
+# Bulk Email Automation Platform
 
-This Node.js application automates sending emails based on data from a CSV file. Built with TypeScript, Express, and modern best practices.
+A full-stack application built with React, Node.js, and PostgreSQL that helps you manage and automate your email campaigns. Whether you're reaching out to recruiters, clients, or managing a marketing campaign, this platform streamlines your email automation needs.
+
+## Tech Stack
+
+- **Frontend**: React.js with TypeScript
+- **Backend**: Node.js with Express
+- **Database**: PostgreSQL
+- **Authentication**: JWT
+- **Email**: SMTP integration
+- **Styling**: Tailwind CSS
 
 ## Features
 
-- CSV processing with validation
-- Automated email sending with rate limiting
-- Detailed logging and error tracking
-- TypeScript for better type safety
-- RESTful API endpoints
-- Environment-based configuration
-- Automatic CSV updates after processing
+- 🔐 User authentication and authorization
+- 📧 Bulk email sending with customizable templates
+- 📊 Dashboard with email analytics
+- 📁 CSV import/export functionality
+- ⏱️ Rate limiting and scheduling
+- 📝 Email template management
+- 🔄 Real-time status updates
+- 📈 Campaign tracking and reporting
+- ⚙️ SMTP configuration through UI
+- 🎨 Responsive modern interface
 
 ## Setup
 
-1. Install dependencies:
+1. Clone the repository:
 ```bash
+git clone https://github.com/yourusername/bulk-email-automation.git
+cd bulk-email-automation
+```
+
+2. Install dependencies for both frontend and backend:
+```bash
+# Install backend dependencies
+cd server
+npm install
+
+# Install frontend dependencies
+cd ../client
 npm install
 ```
 
-2. Create a `.env` file in the root directory:
+3. Set up your PostgreSQL database and create a `.env` file in the server directory:
 ```env
 # Server
 PORT=3000
 NODE_ENV=development
 
-# SMTP Configuration
+# Database
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=email_automation
+DB_USER=your_db_user
+DB_PASSWORD=your_db_password
+
+# JWT
+JWT_SECRET=your_jwt_secret
+
+# SMTP Configuration (Optional - can be set through UI)
 SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
 SMTP_USER=your-email@gmail.com
 SMTP_PASS=your-app-specific-password
-
-# Email Settings
-EMAIL_FROM="Your Name <your-email@gmail.com>"
-EMAIL_SUBJECT="Your Default Subject"
 ```
 
-3. Create a `recruiters.csv` file in the root directory:
-```csv
-Name,Email,ReachOutCount,Status,LastContactDate
-John Doe,john@example.com,0,Pending,
-Jane Smith,jane@example.com,1,Sent,2024-12-20
+4. Set up your frontend environment variables in `client/.env`:
+```env
+REACT_APP_API_URL=http://localhost:3000/api
 ```
 
-## API Endpoints
+## Running the Application
 
-- `POST /api/emails/send` - Process and send emails from CSV
-- `POST /api/emails/test` - Send a test email
-- `GET /api/status` - Get current processing status
-
-## Development
+### Development Mode
 
 ```bash
-# Run in development mode with hot reload
+# Run backend
+cd server
 npm run dev
 
-# Build for production
-npm run build
+# Run frontend (in a new terminal)
+cd client
+npm start
+```
 
-# Run in production mode
+### Production Mode
+
+```bash
+# Build and run backend
+cd server
+npm run build
 npm start
 
-# Run tests
-npm test
+# Build frontend
+cd client
+npm run build
 ```
+
+## Usage
+
+1. Register/Login to your account
+2. Configure your SMTP settings (if not set in .env)
+3. Upload your CSV file with contact information
+4. Create or select an email template
+5. Preview and send your emails
+6. Monitor delivery status and analytics
 
 ## CSV Format
 
-The CSV file should have the following columns:
-- Name: Recruiter's name
+Your CSV file should include these columns:
+- Name: Recipient's name
 - Email: Valid email address
-- ReachOutCount: Number of previous contacts
-- Status: Pending/Sent/Failed
-- LastContactDate: ISO date string or empty
+- Custom fields (optional): Any additional personalization data
 
-## Error Handling
+## Security Features
 
-The application handles various error scenarios:
-- Invalid CSV format
-- SMTP configuration issues
+- Encrypted password storage
+- JWT-based authentication
 - Rate limiting
-- Invalid email addresses
-- Network issues
+- SMTP credential encryption
+- Input sanitization
+- XSS protection
 
-## Logging
+## API Documentation
 
-Logs are written to:
-- Console (development)
-- `logs/error.log` and `logs/combined.log` (production)
+Access the API documentation at `/api/docs` when running the server locally.
+
+Key endpoints:
+- `POST /api/auth/login` - User authentication
+- `POST /api/emails/send` - Process and send emails
+- `GET /api/campaigns` - Get campaign statistics
+- `POST /api/smtp/config` - Update SMTP settings
+
+## Contributing
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

@@ -2,7 +2,8 @@ import { Recruiter, EmailResponse } from '../types';
 
 const API_BASE_URL = 'http://localhost:8080/api';
 
-export const fetchRecruiters = async (): Promise<Recruiter[]> => {
+export const
+fetchRecruiters = async (): Promise<Recruiter[]> => {
     const response = await fetch(`${API_BASE_URL}/emails/status`);
     if (!response.ok) throw new Error('Failed to fetch recruiters');
     return response.json();
