@@ -1,4 +1,2 @@
-Name,Email,ReachOutCount,Status,LastContactDate
-John Doe,kabeer786joshi@gmail.com,1,Sent,2024-12-25T15:30:49.888Z
-Jane Smith,xsama35@gmail.com,1,Sent,2024-12-20
-Alice Johnson,alice@example.com,1,Sent,2024-12-25T15:30:54.392Z
+Name,Email,ReachOutCount,Status,LastContactDate,Role,Company
+Kabeer,kabeer786joshi@gmail.com,0,Pending,2025-01-19T10:45:04.273Z,SDE-1,Goreeva

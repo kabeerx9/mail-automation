@@ -30,6 +30,7 @@ export class FileCSVService implements CSVService {
             ReachOutCount: parseInt(record.ReachOutCount, 10),
           });
           records.push(recruiter);
+
         } catch (error) {
           logger.warn(`Invalid record in CSV: ${JSON.stringify(record)}`, { error });
         }
@@ -46,7 +47,7 @@ export class FileCSVService implements CSVService {
     try {
       const stringifier = stringify({
         header: true,
-        columns: ['Name', 'Email', 'ReachOutCount', 'Status', 'LastContactDate'],
+        columns: ['Name', 'Email', 'ReachOutCount', 'Status', 'LastContactDate' , 'Role' , 'Company'],
       });
 
       const csvContent = await new Promise<string>((resolve, reject) => {

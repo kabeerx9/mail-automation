@@ -36,6 +36,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td>${row.ReachOutCount}</td>
                 <td><span class="status-badge status-${row.Status.toLowerCase()}">${row.Status}</span></td>
                 <td>${row.LastContactDate || '-'}</td>
+                <td>${row.Company}</td>
+                <td>${row.Role}</td>
             </tr>
         `).join('');
     };
@@ -114,7 +116,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Event Listeners
     sendEmailsBtn.addEventListener('click', sendEmails);
     refreshBtn.addEventListener('click', fetchData);
-    
+
     sendTestBtn.addEventListener('click', () => {
         testEmailModal.classList.add('active');
     });

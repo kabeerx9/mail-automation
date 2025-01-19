@@ -6,6 +6,8 @@ export const RecruiterSchema = z.object({
   ReachOutCount: z.number().int().min(0),
   Status: z.enum(['Pending', 'Sent', 'Failed']),
   LastContactDate: z.string().optional(),
+  Company: z.string(),
+  Role : z.string(),
 });
 
 export type Recruiter = z.infer<typeof RecruiterSchema>;
