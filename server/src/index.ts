@@ -7,10 +7,15 @@ import config from './config';
 import logger from './utils/logger';
 import { AuthController } from './controllers/auth.controller';
 import createAuthRouter from './routes/auth.routes';
+import cors from 'cors';
 
 const app = express();
 
 app.use(express.json());
+app.use(cors({
+  origin: 'http://localhost:5173',
+  credentials: true
+}));
 
 // Serve static files
 // app.use(express.static('public'));

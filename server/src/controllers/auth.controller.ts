@@ -5,6 +5,7 @@ import jwt from 'jsonwebtoken'
 
 interface User {
     id: string;
+    name: string;
     email: string;
     password: string;
 }
@@ -13,7 +14,7 @@ export class AuthController {
     private users : User[] = []
 
   register = async (req: Request, res: Response) => {
-    const { email, password } = req.body;
+    const { name, email, password } = req.body;
 
     if(!email || !password){
         return res.status(400).json({
@@ -34,6 +35,7 @@ export class AuthController {
     const hashedPassword = await bcrypt.hash(password, 10);
     const newUser : User = {
         id: Date.now().toString(),
+        name,
         email,
         password: hashedPassword
     }
@@ -72,7 +74,7 @@ export class AuthController {
         })
     }
 
-    const token = jwt.sign({ id: user.id, email: user.email }, config.jwt_secret, { expiresIn: '1h' });
+    const token = jwt.sign({ id: user.id, email: user.email, name: user.name }, config.jwt_secret, { expiresIn: '1h' });
 
     res.status(200).json({
         success: true,

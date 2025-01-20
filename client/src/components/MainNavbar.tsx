@@ -1,8 +1,12 @@
-import { Link } from 'react-router';
+import { Link, useNavigate } from 'react-router';
+import { authService } from '../services/auth';
 
 export default function MainNavbar() {
+  const navigate = useNavigate();
+
   const handleLogout = () => {
-    // TODO: Implement logout logic
+    authService.logout();
+    navigate('/auth/login');
   };
 
   return (
@@ -41,5 +45,5 @@ export default function MainNavbar() {
         </div>
       </div>
     </nav>
-  );
+);
 }

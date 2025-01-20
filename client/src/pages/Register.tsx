@@ -1,7 +1,9 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Link } from 'react-router';
+import { Link, useNavigate } from 'react-router';
+import { authService } from '../services/auth';
+import { useState } from 'react';
 
 const registerSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
@@ -16,13 +18,29 @@ const registerSchema = z.object({
 type RegisterFormData = z.infer<typeof registerSchema>;
 
 export default function Register() {
-  const { register, handleSubmit, formState: { errors } } = useForm<RegisterFormData>({
+  const navigate = useNavigate();
+  const [error, setError] = useState<string>('');
+  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema)
   });
 
-  const onSubmit = (data: RegisterFormData) => {
-    // TODO: Implement registration logic
-    console.log(data);
+  const onSubmit = async (data: RegisterFormData) => {
+    try {
+      setError('');
+      const response = await authService.register({
+        name: data.name,
+        email: data.email,
+        password: data.password
+      });
+
+      if (response.success) {
+        navigate('/main');
+      } else {
+        setError(response.message);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred during registration');
+    }
   };
 
   return (
@@ -36,6 +54,12 @@ export default function Register() {
           </Link>
         </p>
       </div>
+
+      {error && (
+        <div className="mt-4 p-3 bg-red-50 text-red-700 rounded-md">
+          {error}
+        </div>
+      )}
 
       <form onSubmit={handleSubmit(onSubmit)} className="mt-8 space-y-6">
         <div className="space-y-4">
@@ -105,8 +129,12 @@ export default function Register() {
         </div>
 
         <div>
-          <button type="submit" className="btn-primary w-full">
-            Create Account
+          <button
+            type="submit"
+            className="btn-primary w-full"
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? 'Creating Account...' : 'Create Account'}
           </button>
         </div>
       </form>

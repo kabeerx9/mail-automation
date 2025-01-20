@@ -1,7 +1,9 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Link } from 'react-router';
+import { Link, useNavigate } from 'react-router';
+import { authService } from '../services/auth';
+import { useState } from 'react';
 
 const loginSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -11,13 +13,25 @@ const loginSchema = z.object({
 type LoginFormData = z.infer<typeof loginSchema>;
 
 export default function Login() {
-  const { register, handleSubmit, formState: { errors } } = useForm<LoginFormData>({
+  const navigate = useNavigate();
+  const [error, setError] = useState<string>('');
+  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema)
   });
 
-  const onSubmit = (data: LoginFormData) => {
-    // TODO: Implement login logic
-    console.log(data);
+  const onSubmit = async (data: LoginFormData) => {
+    try {
+      setError('');
+      const response = await authService.login(data);
+
+      if (response.success) {
+        navigate('/main');
+      } else {
+        setError(response.message);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred during login');
+    }
   };
 
   return (
@@ -26,11 +40,17 @@ export default function Login() {
         <h2 className="mt-6 text-3xl font-bold text-gray-900">Sign in to your account</h2>
         <p className="mt-2 text-sm text-gray-600">
           Or{' '}
-          <Link to="/register" className="font-medium text-blue-600 hover:text-blue-500">
+          <Link to="/auth/register" className="font-medium text-blue-600 hover:text-blue-500">
             create a new account
           </Link>
         </p>
       </div>
+
+      {error && (
+        <div className="mt-4 p-3 bg-red-50 text-red-700 rounded-md">
+          {error}
+        </div>
+      )}
 
       <form onSubmit={handleSubmit(onSubmit)} className="mt-8 space-y-6">
         <div className="space-y-4">
@@ -88,8 +108,12 @@ export default function Login() {
         </div>
 
         <div>
-          <button type="submit" className="btn-primary w-full">
-            Sign in
+          <button
+            type="submit"
+            className="btn-primary w-full"
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? 'Signing in...' : 'Sign in'}
           </button>
         </div>
       </form>
