@@ -1,3 +1,4 @@
+import axios from 'axios';
 import axiosInstance from './axios';
 
 interface RegisterData {
@@ -19,7 +20,7 @@ interface AuthResponse {
 
 export const authService = {
   register: async (data: RegisterData): Promise<AuthResponse> => {
-    const response = await axiosInstance.post<AuthResponse>('/auth/register', data);
+    const response = await axios.post<AuthResponse>('http://localhost:8080/api/auth/register', data);
     if (response.data.token) {
       localStorage.setItem('token', response.data.token);
     }
@@ -27,7 +28,7 @@ export const authService = {
   },
 
   login: async (data: LoginData): Promise<AuthResponse> => {
-    const response = await axiosInstance.post<AuthResponse>('/auth/login', data);
+    const response = await axios.post<AuthResponse>('http://localhost:8080/api/auth/login', data);
     if (response.data.token) {
       localStorage.setItem('token', response.data.token);
     }

@@ -1,30 +1,17 @@
 import { Recruiter, EmailResponse } from '../types';
+import axiosInstance from './axios';
 
-const API_BASE_URL = 'http://localhost:8080/api';
-
-export const
-fetchRecruiters = async (): Promise<Recruiter[]> => {
-    const response = await fetch(`${API_BASE_URL}/emails/status`);
-    if (!response.ok) throw new Error('Failed to fetch recruiters');
-    return response.json();
+export const fetchRecruiters = async (): Promise<Recruiter[]> => {
+    const response = await axiosInstance.get('/emails/status');
+    return response.data;
 };
 
 export const sendEmails = async (): Promise<EmailResponse> => {
-    const response = await fetch(`${API_BASE_URL}/emails/send`, {
-        method: 'POST',
-    });
-    if (!response.ok) throw new Error('Failed to send emails');
-    return response.json();
+    const response = await axiosInstance.post('/emails/send');
+    return response.data;
 };
 
 export const sendTestEmail = async (email: string): Promise<EmailResponse> => {
-    const response = await fetch(`${API_BASE_URL}/emails/test`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email }),
-    });
-    if (!response.ok) throw new Error('Failed to send test email');
-    return response.json();
+    const response = await axiosInstance.post('/emails/test', { email });
+    return response.data;
 };

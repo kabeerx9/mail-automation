@@ -11,6 +11,7 @@ function App() {
   const loadData = async () => {
     try {
       const data = await fetchRecruiters();
+      console.log("data", data);
       setRecruiters(data);
       setError(null);
     } catch (err) {
