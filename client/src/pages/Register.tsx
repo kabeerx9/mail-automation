@@ -34,7 +34,7 @@ export default function Register() {
       });
 
       if (response.success) {
-        navigate('/main');
+        navigate('/');
       } else {
         setError(response.message);
       }

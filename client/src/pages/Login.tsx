@@ -25,7 +25,7 @@ export default function Login() {
       const response = await authService.login(data);
 
       if (response.success) {
-        navigate('/main');
+        navigate('/');
       } else {
         setError(response.message);
       }

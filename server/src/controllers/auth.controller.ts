@@ -53,13 +53,13 @@ export class AuthController {
 
     // create both access and refresh token
     const token = jwt.sign(
-        { id: newUser.id, email: newUser.email, type: 'access' } as TokenPayload,
+        { id: newUser.id, email: newUser.email, name: newUser.name, type: 'access' } as TokenPayload,
         config.jwt_secret,
         { expiresIn: '1h' }
     );
 
     const refreshToken = jwt.sign(
-        { id: newUser.id, email: newUser.email, type: 'refresh' } as TokenPayload,
+        { id: newUser.id, email: newUser.email, name: newUser.name, type: 'refresh' } as TokenPayload,
         config.jwt_refresh_secret,
         { expiresIn: '7d' }
     );
@@ -78,7 +78,7 @@ export class AuthController {
     const { email, password } = req.body;
 
     const user = this.users.find((user: User) => user.email === email);
-
+    console.log(user);
     if (!user) {
         return res.status(401).json({
             success: false,
@@ -95,7 +95,7 @@ export class AuthController {
     }
 
     const accessToken = jwt.sign(
-        { id: user.id, email: user.email, name: user.name, type: 'access' } as TokenPayload,
+            { id: user.id, email: user.email, name: user.name, type: 'access' } as TokenPayload,
         config.jwt_secret,
         { expiresIn: '1h' }
     );
