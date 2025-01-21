@@ -10,7 +10,6 @@ export const createEmailRouter = (emailController: EmailController): Router => {
   router.get('/status', authMiddleware, emailController.getStatus);
   router.post('/send', authMiddleware, emailController.processEmails);
   router.post('/test', authMiddleware, emailController.sendTestEmail);
-
   return router;
 };
 

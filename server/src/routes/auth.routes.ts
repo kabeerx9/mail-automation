@@ -7,7 +7,7 @@ export const createAuthRouter = (authController: AuthController): Router => {
   router.get('/status', authController.getStatus);
   router.post('/register', authController.register);
   router.post('/login', authController.login);
-  router.post("/check-token", authController.checkToken);
+  router.post('/refresh', authController.refreshToken);
 
   return router;
 };

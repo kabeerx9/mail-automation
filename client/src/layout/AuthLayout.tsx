@@ -1,39 +1,10 @@
 import { Outlet, Navigate } from 'react-router';
 import AuthNavbar from '../components/AuthNavbar';
-
-interface JWTPayload {
-  id: string;
-  email: string;
-  name?: string;
-  exp: number;
-}
+import { authService } from '../services/auth';
 
 export default function AuthLayout() {
-  const isAuthenticated = () => {
-    const token = localStorage.getItem('token');
-    if (!token) return false;
-
-    try {
-      const [, base64Payload] = token.split('.');
-      const payload = JSON.parse(atob(base64Payload)) as JWTPayload;
-
-      const currentTime = Date.now() / 1000;
-      console.log(payload.exp, currentTime);
-      console.log("difference", payload.exp - currentTime);
-      if (payload.exp < currentTime) {
-        localStorage.removeItem('token');
-        return false;
-      }
-
-      return true;
-    } catch {
-      localStorage.removeItem('token');
-      return false;
-    }
-  };
-
   // If authenticated, redirect to home page
-  if (isAuthenticated()) {
+  if (authService.isAuthenticated()) {
     return <Navigate to="/main" replace />;
   }
 

@@ -14,6 +14,7 @@ const envSchema = z.object({
   EMAIL_SUBJECT: z.string(),
   EMAIL_RATE_LIMIT: z.string().transform(Number).default('50'),
   JWT_SECRET: z.string(),
+  JWT_REFRESH_SECRET: z.string(),
 });
 
 const config = envSchema.parse(process.env);
@@ -43,4 +44,5 @@ export default {
     },
   },
   jwt_secret: config.JWT_SECRET,
+  jwt_refresh_secret: config.JWT_REFRESH_SECRET,
 };
