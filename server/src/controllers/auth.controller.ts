@@ -1,15 +1,8 @@
 import { Request, Response } from 'express';
 import config from '../config';
 import bcrypt from 'bcrypt';
-import jwt from 'jsonwebtoken'
-
-interface User {
-    id: string;
-    name: string;
-    email: string;
-    password: string;
-    refreshToken: string;
-}
+import jwt from 'jsonwebtoken';
+import prisma from '../lib/prisma';
 
 interface TokenPayload {
     id: string;
@@ -19,8 +12,6 @@ interface TokenPayload {
 }
 
 export class AuthController {
-    private users : User[] = []
-
   register = async (req: Request, res: Response) => {
     const { name, email, password } = req.body;
 
@@ -31,96 +22,122 @@ export class AuthController {
         })
     }
 
-    // check if user already exists
-    if(this.users.find((user: User) => user.email === email)){
-        return res.status(400).json({
+    try {
+        // Check if user exists using Prisma
+        const existingUser = await prisma.user.findUnique({
+            where: { email }
+        });
+
+
+        if(existingUser){
+            return res.status(400).json({
+                success: false,
+                message: 'User already exists'
+            })
+        }
+
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        // Create new user using Prisma
+        const newUser = await prisma.user.create({
+            data: {
+                name,
+                email,
+                password: hashedPassword,
+                refreshToken: ''
+            }
+        });
+
+        // create both access and refresh token
+        const token = jwt.sign(
+            { id: newUser.id, email: newUser.email, name: newUser.name, type: 'access' } as TokenPayload,
+            config.jwt_secret,
+            { expiresIn: '1h' }
+        );
+
+        const refreshToken = jwt.sign(
+            { id: newUser.id, email: newUser.email, name: newUser.name, type: 'refresh' } as TokenPayload,
+            config.jwt_refresh_secret,
+            { expiresIn: '7d' }
+        );
+
+        // Update user's refresh token using Prisma
+        await prisma.user.update({
+            where: { id: newUser.id },
+            data: { refreshToken: await bcrypt.hash(refreshToken, 10) }
+        });
+
+        res.status(201).json({
+            success: true,
+            message: 'User registered successfully',
+            accessToken: token,
+            refreshToken: refreshToken
+        })
+    } catch (error) {
+        res.status(500).json({
             success: false,
-            message: 'User already exists'
+            message: 'Error creating user',
+            error: error instanceof Error ? error.message : 'Unknown error'
         })
     }
-
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    const newUser : User = {
-        id: Date.now().toString(),
-        name,
-        email,
-        password: hashedPassword,
-        refreshToken: ''
-    }
-
-    this.users.push(newUser);
-
-    // create both access and refresh token
-    const token = jwt.sign(
-        { id: newUser.id, email: newUser.email, name: newUser.name, type: 'access' } as TokenPayload,
-        config.jwt_secret,
-        { expiresIn: '1h' }
-    );
-
-    const refreshToken = jwt.sign(
-        { id: newUser.id, email: newUser.email, name: newUser.name, type: 'refresh' } as TokenPayload,
-        config.jwt_refresh_secret,
-        { expiresIn: '7d' }
-    );
-
-    newUser.refreshToken = await bcrypt.hash(refreshToken, 10);
-
-    res.status(201).json({
-        success: true,
-        message: 'User registered successfully',
-        accessToken: token,
-        refreshToken: refreshToken
-    })
   }
 
-  login = async (req : Request , res: Response)=>{
+  login = async (req : Request , res: Response) => {
     const { email, password } = req.body;
 
-    const user = this.users.find((user: User) => user.email === email);
-    console.log(user);
-    if (!user) {
-        return res.status(401).json({
-            success: false,
-            message: 'User not found'
-        })
-    }
-    const isPasswordValid = await bcrypt.compare(password, user.password);
+    try {
+        // Find user using Prisma
+        const user = await prisma.user.findUnique({
+            where: { email }
+        });
 
-    if (!isPasswordValid) {
-        return res.status(401).json({
-            success: false,
-            message: 'Invalid credentials'
-        })
-    }
+        if (!user) {
+            return res.status(401).json({
+                success: false,
+                message: 'User not found'
+            })
+        }
 
-    const accessToken = jwt.sign(
+        const isPasswordValid = await bcrypt.compare(password, user.password);
+
+        if (!isPasswordValid) {
+            return res.status(401).json({
+                success: false,
+                message: 'Invalid credentials'
+            })
+        }
+
+        const accessToken = jwt.sign(
             { id: user.id, email: user.email, name: user.name, type: 'access' } as TokenPayload,
-        config.jwt_secret,
-        { expiresIn: '1h' }
-    );
+            config.jwt_secret,
+            { expiresIn: '1h' }
+        );
 
-    const refreshToken = jwt.sign(
-        { id: user.id, email: user.email, name: user.name, type: 'refresh' } as TokenPayload,
-        config.jwt_refresh_secret,
+        const refreshToken = jwt.sign(
+            { id: user.id, email: user.email, name: user.name, type: 'refresh' } as TokenPayload,
+            config.jwt_refresh_secret,
             { expiresIn: '7d' }
-    );
+        );
 
-    user.refreshToken = await bcrypt.hash(refreshToken, 10);
+        // Update refresh token using Prisma
+        await prisma.user.update({
+            where: { id: user.id },
+            data: { refreshToken: await bcrypt.hash(refreshToken, 10) }
+        });
 
-    res.status(200).json({
-        success: true,
-        message: 'Login successful',
-        accessToken,
-        refreshToken
-    })
-  }
-
-  getStatus = async (req: Request, res: Response) => {
-    res.status(200).json({
-        success: true,
-        message: 'Auth service is running'
-    })
+        res.status(200).json({
+            success: true,
+            message: 'Login successful',
+            accessToken,
+            refreshToken
+        })
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Error during login',
+            error: error instanceof Error ? error.message : 'Unknown error'
+        })
+    }
   }
 
   refreshToken = async (req: Request, res: Response) => {
@@ -145,8 +162,11 @@ export class AuthController {
             });
         }
 
-        // Find the user
-        const user = this.users.find(user => user.id === decoded.id);
+        // Find the user using Prisma
+        const user = await prisma.user.findUnique({
+            where: { id: decoded.id }
+        });
+
         if (!user) {
             return res.status(401).json({
                 success: false,
@@ -176,8 +196,11 @@ export class AuthController {
             { expiresIn: '7d' }
         );
 
-        // Update stored refresh token
-        user.refreshToken = await bcrypt.hash(newRefreshToken, 10);
+        // Update stored refresh token using Prisma
+        await prisma.user.update({
+            where: { id: user.id },
+            data: { refreshToken: await bcrypt.hash(newRefreshToken, 10) }
+        });
 
         return res.status(200).json({
             success: true,
@@ -191,5 +214,12 @@ export class AuthController {
             message: 'Invalid refresh token'
         });
     }
+  }
+
+  getStatus = async (req: Request, res: Response) => {
+    res.status(200).json({
+        success: true,
+        message: 'Auth service is running'
+    })
   }
 }

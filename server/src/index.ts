@@ -8,6 +8,7 @@ import logger from './utils/logger';
 import { AuthController } from './controllers/auth.controller';
 import createAuthRouter from './routes/auth.routes';
 import cors from 'cors';
+import testRoutes from './routes/test.routes';
 
 const app = express();
 
@@ -38,6 +39,7 @@ async function bootstrap() {
     // Setup routes
     app.use('/api/emails', createEmailRouter(emailController));
     app.use('/api/auth', createAuthRouter(authController));
+    app.use('/api/test', testRoutes);
 
     // Error handling middleware
     app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
