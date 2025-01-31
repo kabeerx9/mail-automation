@@ -9,6 +9,7 @@ interface TokenPayload {
     email: string;
     name?: string;
     type: 'access' | 'refresh';
+    has_configured: boolean;
 }
 
 export class AuthController {
@@ -50,13 +51,25 @@ export class AuthController {
 
         // create both access and refresh token
         const token = jwt.sign(
-            { id: newUser.id, email: newUser.email, name: newUser.name, type: 'access' } as TokenPayload,
+            {
+                id: newUser.id,
+                email: newUser.email,
+                name: newUser.name,
+                type: 'access',
+                has_configured: false
+            } as TokenPayload,
             config.jwt_secret,
             { expiresIn: '1h' }
         );
 
         const refreshToken = jwt.sign(
-            { id: newUser.id, email: newUser.email, name: newUser.name, type: 'refresh' } as TokenPayload,
+            {
+                id: newUser.id,
+                email: newUser.email,
+                name: newUser.name,
+                type: 'refresh',
+                has_configured: false
+            } as TokenPayload,
             config.jwt_refresh_secret,
             { expiresIn: '7d' }
         );
@@ -88,7 +101,8 @@ export class AuthController {
     try {
         // Find user using Prisma
         const user = await prisma.user.findUnique({
-            where: { email }
+            where: { email },
+            include: { configuration: true }
         });
 
         if (!user) {
@@ -107,14 +121,28 @@ export class AuthController {
             })
         }
 
+        const hasConfiguration = user.configuration !== null;
+
         const accessToken = jwt.sign(
-            { id: user.id, email: user.email, name: user.name, type: 'access' } as TokenPayload,
+            {
+                id: user.id,
+                email: user.email,
+                name: user.name,
+                type: 'access',
+                has_configured: hasConfiguration
+            } as TokenPayload,
             config.jwt_secret,
             { expiresIn: '1h' }
         );
 
         const refreshToken = jwt.sign(
-            { id: user.id, email: user.email, name: user.name, type: 'refresh' } as TokenPayload,
+            {
+                id: user.id,
+                email: user.email,
+                name: user.name,
+                type: 'refresh',
+                has_configured: hasConfiguration
+            } as TokenPayload,
             config.jwt_refresh_secret,
             { expiresIn: '7d' }
         );

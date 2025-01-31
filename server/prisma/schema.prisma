@@ -22,5 +22,24 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
+  configuration Configuration?
+
   @@map("users")
+}
+
+
+model Configuration{
+    id String @id @default(uuid())
+    SMTP_HOST String
+    SMTP_PORT String
+    SMTP_USER String
+    SMTP_PASS String
+    EMAIL_FROM String
+    EMAIL_SUBJECT String
+    EMAIL_RATE_LIMIT Int
+
+    userId String @unique
+    user User @relation(fields: [userId], references: [id])
+
+    @@map("configurations")
 }

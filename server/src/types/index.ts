@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { JwtPayload } from 'jsonwebtoken';
 
 export const RecruiterSchema = z.object({
   Name: z.string(),
@@ -30,3 +31,20 @@ export interface EmailResponse {
     errors: Array<{ email: string; error: string }>;
   };
 }
+
+export interface TokenUser {
+    id: string;
+    email: string;
+    name?: string;
+    has_configured: boolean;
+}
+
+declare global {
+    namespace Express {
+        interface Request {
+            user?: TokenUser;
+        }
+    }
+}
+
+export {};  // This is important to make the file a module

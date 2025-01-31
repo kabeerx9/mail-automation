@@ -5,6 +5,7 @@ interface JWTPayload {
   email: string;
   name?: string;
   type: 'access' | 'refresh';
+  has_configuration : boolean;
 }
 
 export const getUserFromToken = (): JWTPayload | null => {

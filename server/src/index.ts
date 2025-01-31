@@ -7,6 +7,7 @@ import config from './config';
 import logger from './utils/logger';
 import { AuthController } from './controllers/auth.controller';
 import createAuthRouter from './routes/auth.routes';
+import configRoutes from './routes/config.routes';
 import cors from 'cors';
 import testRoutes from './routes/test.routes';
 
@@ -39,6 +40,7 @@ async function bootstrap() {
     // Setup routes
     app.use('/api/emails', createEmailRouter(emailController));
     app.use('/api/auth', createAuthRouter(authController));
+    app.use('/api/config', configRoutes);
     app.use('/api/test', testRoutes);
 
     // Error handling middleware

@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { EmailController } from '../controllers/email.controller';
 import asyncHandler from 'express-async-handler';
-import { authMiddleware } from '../middleware/authMiddelware';
+import { authMiddleware } from '../middleware/authMiddleware';
 
 export const createEmailRouter = (emailController: EmailController): Router => {
   const router = Router();
