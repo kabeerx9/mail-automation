@@ -1,5 +1,7 @@
 import { z } from 'zod';
+import nodemailer from 'nodemailer';
 import { JwtPayload } from 'jsonwebtoken';
+import { Configuration } from '@prisma/client';
 
 export const RecruiterSchema = z.object({
   Name: z.string(),
@@ -14,7 +16,7 @@ export const RecruiterSchema = z.object({
 export type Recruiter = z.infer<typeof RecruiterSchema>;
 
 export interface EmailService {
-  sendEmail(to: string, subject: string, body: string): Promise<void>;
+  sendEmail(to: string, body: string , transporter: nodemailer.Transporter , configuration : Configuration ): Promise<void>;
 }
 
 export interface CSVService {

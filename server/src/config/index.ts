@@ -23,19 +23,6 @@ export default {
   port: config.PORT,
 
   isDev: config.NODE_ENV === 'development',
-  smtp: {
-    host: config.SMTP_HOST,
-    port: config.SMTP_PORT,
-    auth: {
-      user: config.SMTP_USER,
-      pass: config.SMTP_PASS,
-    },
-  },
-  email: {
-    from: config.EMAIL_FROM,
-    subject: config.EMAIL_SUBJECT,
-    rateLimit: config.EMAIL_RATE_LIMIT,
-  },
   paths: {
     csv: 'recruiters.csv',
     logs: {

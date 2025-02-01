@@ -1,13 +1,31 @@
 import { Request, Response } from 'express';
 import { EmailService, CSVService, EmailResponse } from '../types';
-import config from '../config';
 import logger from '../utils/logger';
-
+import prisma from '@/lib/prisma';
+import nodemailer from 'nodemailer';
 export class EmailController {
   constructor(
     private emailService: EmailService,
     private csvService: CSVService
   ) {}
+
+  generateTransporter =  (configuration: any) => {
+
+    if(!configuration) {
+      return null
+    }
+
+    const modifiedTransporterConfiguration = {
+      host : configuration.SMTP_HOST,
+      port : parseInt(configuration.SMTP_PORT),
+      auth : {
+          user : configuration.SMTP_USER,
+          pass : configuration.SMTP_PASS
+      }
+    }
+
+    return nodemailer.createTransport(modifiedTransporterConfiguration)
+  }
 
   getStatus = async (req: Request, res: Response) => {
     try {
@@ -25,12 +43,42 @@ export class EmailController {
 
   sendTestEmail = async (req: Request, res: Response) => {
     try {
-      const testEmail = req.body.email || config.smtp.auth.user;
+
+        
+
+        const configuration = await prisma.configuration.findUnique({
+            where : {
+                userId : req.user?.id as string
+            }
+        })
+
+        const testEmail = req.body.email || configuration?.EMAIL_FROM;
+
+      const transporter =  this.generateTransporter(configuration);
+
+      const verifyTransporter = await transporter?.verify();
+
+      console.log({verifyTransporter});
+
+      if(!configuration?.EMAIL_FROM || !configuration?.EMAIL_SUBJECT || !configuration?.SMTP_HOST || !configuration?.SMTP_PORT || !configuration?.SMTP_USER || !configuration?.SMTP_PASS) {
+        return res.status(400).json({
+          success: false,
+          message: 'Email configuration not found. Please set up your email configuration first.'
+        });
+      }
+
+      if (!transporter) {
+        return res.status(400).json({
+          success: false,
+          message: 'Email configuration not found. Please set up your email configuration first.'
+        });
+      }
 
       await this.emailService.sendEmail(
         testEmail,
-        'Test Email',
-        'This is a test email from the email automation system.'
+        'This is a test email from the email automation system.',
+        transporter,
+        configuration
       );
 
       res.json({
@@ -59,34 +107,48 @@ export class EmailController {
     };
 
     try {
+      const configuration = await prisma.configuration.findUnique({
+        where : {
+            userId : req.user?.id as string
+        }
+      })
+
+      if(!configuration?.EMAIL_FROM || !configuration?.EMAIL_SUBJECT || !configuration?.SMTP_HOST || !configuration?.SMTP_PORT || !configuration?.SMTP_USER || !configuration?.SMTP_PASS) {
+        return res.status(400).json({
+          success: false,
+          message: 'Email configuration not found. Please set up your email configuration first.'
+        });
+      }
+
+      const transporter = this.generateTransporter(configuration);
+
+      if (!transporter) {
+        return res.status(400).json({
+          success: false,
+          message: 'Email configuration not found. Please set up your email configuration first.'
+        });
+      }
+
       const recruiters = await this.csvService.readRecruiters();
       logger.info(`Processing ${recruiters.length} recruiters`);
 
       for (const recruiter of recruiters) {
-        // if (recruiter.Status === 'Sent') {
-        //   continue;
-        // }
-
         try {
-          console.log("Recruiter: ", recruiter);
-          console.log("Recruiter.ReachOutCount: ", recruiter.ReachOutCount);
-          console.log(recruiter.ReachOutCount === 0)
           if (recruiter.ReachOutCount === 0) {
-            console.log("Sending initial email to ", recruiter.Email);
             await this.emailService.sendEmail(
               recruiter.Email,
-              config.email.subject,
-              this.generateEmailBody(recruiter.Name , recruiter.Company , recruiter.Role)
+              this.generateEmailBody(recruiter.Name, recruiter.Company, recruiter.Role , configuration?.EMAIL_FROM),
+              transporter,
+              configuration
             );
           } else {
-            console.log("Sending follow up email to ", recruiter.Email);
             await this.emailService.sendEmail(
               recruiter.Email,
-              config.email.subject,
-              this.generateFollowUpEmailBody(recruiter.Name , recruiter.Company , recruiter.Role)
+              this.generateFollowUpEmailBody(recruiter.Name, recruiter.Company, recruiter.Role , configuration?.EMAIL_FROM),
+              transporter,
+              configuration
             );
           }
-          console.log("Email sent to ", recruiter.Email);
           recruiter.Status = 'Sent';
           recruiter.ReachOutCount += 1;
           recruiter.LastContactDate = new Date().toISOString();
@@ -114,7 +176,7 @@ export class EmailController {
   };
 
   // This function generates an email body
-  private generateEmailBody(name: string, company: string, role: string): string {
+  private generateEmailBody(name: string, company: string, role: string , emailFrom: string): string {
     const resumeLink = "https://drive.google.com/file/d/1A1ePohlTOyB4i3qXLjvrcqTjPeEpUYsD/view?usp=drive_link"
     const githubLink = "https://github.com/kabeerx9"
     const email = "kabeer786joshi@gmail.com"
@@ -126,19 +188,19 @@ export class EmailController {
         <p>Dear ${name},</p>
         <p>
           I hope this message finds you well. My name is ${
-            config.email.from.split('<')[0].trim()
+            emailFrom.split('<')[0].trim()
           }, and I came across the opening for the <strong>${role}</strong> role at <strong>${company}</strong>.
           I am genuinely excited about this opportunity as it aligns closely with my skills and career aspirations.
         </p>
         <p>
             I have close to two years of professional experience as a frontend developer. During this time, I have developed dynamic applications using modern frameworks like React, Next.js, and React Native.
-          I’ve also worked on optimizing applications for performance, implementing CI/CD pipelines, and deploying production-ready systems, ensuring reliability and scalability.
+          I've also worked on optimizing applications for performance, implementing CI/CD pipelines, and deploying production-ready systems, ensuring reliability and scalability.
         </p>
         <p>
-          Some of my notable contributions include building a comprehensive school management system, creating native mobile apps for students and teachers, and developing a real-time collaborative code editor. I am always driven to learn and contribute meaningfully to a team’s success.
+          Some of my notable contributions include building a comprehensive school management system, creating native mobile apps for students and teachers, and developing a real-time collaborative code editor. I am always driven to learn and contribute meaningfully to a team's success.
         </p>
         <p>
-          I would love the opportunity to discuss how my expertise aligns with your team’s goals and how I can add value to ${company}.
+          I would love the opportunity to discuss how my expertise aligns with your team's goals and how I can add value to ${company}.
           Please find my resume attached <a href="${resumeLink}" target="_blank" style="color: #007BFF; text-decoration: none;">here</a>.
         </p>
         <p>
@@ -146,7 +208,7 @@ export class EmailController {
         </p>
         <p>
           Best regards,<br>
-          ${config.email.from.split('<')[0].trim()}<br>
+          ${emailFrom.split('<')[0].trim()}<br>
           ${address}<br>
           <a href="mailto:${email}" style="color: #007BFF; text-decoration: none;">${email}</a> | ${phone} |
           <a href="${githubLink}" target="_blank" style="color: #007BFF; text-decoration: none;">GitHub</a>
@@ -154,7 +216,7 @@ export class EmailController {
       </div>
     `;
   }
-  private generateFollowUpEmailBody(recruiterName: string, recruiterCompany: string, role: string): string {
+  private generateFollowUpEmailBody(recruiterName: string, recruiterCompany: string, role: string , emailFrom: string): string {
     return `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; line-height: 1.6; color: #333;">
         <p>Dear ${recruiterName},</p>
@@ -164,14 +226,14 @@ export class EmailController {
         </p>
         <p>
           I completely understand that you might have a busy schedule. If there's a convenient time to discuss this opportunity or if further information is required,
-          I’d be happy to provide it.
+          I'd be happy to provide it.
         </p>
         <p>
           Thank you for your time and consideration. I look forward to hearing from you and am hopeful for the chance to connect.
         </p>
         <p>
           Best regards,<br>
-          ${config.email.from.split('<')[0].trim()}
+          ${emailFrom.split('<')[0].trim()}
         </p>
       </div>
     `;

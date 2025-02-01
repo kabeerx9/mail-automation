@@ -1,44 +1,28 @@
 import nodemailer from 'nodemailer';
 import { EmailService } from '../types';
-import config from '../config';
 import logger from '../utils/logger';
-
+import { Configuration } from '@prisma/client';
 export class NodemailerService implements EmailService {
-  private transporter: nodemailer.Transporter;
-  private lastSentTime: number = 0;
-  private readonly minDelay: number;
 
-  constructor() {
-    this.transporter = nodemailer.createTransport(config.smtp);
-    // Convert rate limit from emails per minute to milliseconds between emails
-    this.minDelay = (60 * 1000) / config.email.rateLimit;
-  }
 
-  async init(): Promise<void> {
-    try {
-      await this.transporter.verify();
-      logger.info('SMTP connection established successfully');
-    } catch (error) {
-      logger.error('Failed to establish SMTP connection', { error });
-      throw error;
-    }
-  }
+    private lastSentTime: number = 0;
 
-  async sendEmail(to: string, subject: string, body: string): Promise<void> {
+
+  async sendEmail(to: string, body: string , transporter: nodemailer.Transporter , configuration : Configuration ): Promise<void> {
     try {
       // Implement rate limiting
       const now = Date.now();
       const timeSinceLastEmail = now - this.lastSentTime;
-      if (timeSinceLastEmail < this.minDelay) {
+      if (timeSinceLastEmail < configuration.EMAIL_RATE_LIMIT) {
         await new Promise(resolve =>
-          setTimeout(resolve, this.minDelay - timeSinceLastEmail)
+          setTimeout(resolve, configuration.EMAIL_RATE_LIMIT - timeSinceLastEmail)
         );
       }
 
-      await this.transporter.sendMail({
-        from: config.email.from,
+      await transporter.sendMail({
+        from: configuration.EMAIL_FROM,
         to,
-        subject,
+        subject : configuration.EMAIL_SUBJECT,
         html: body,
       });
 

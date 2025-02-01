@@ -29,7 +29,9 @@ async function bootstrap() {
   try {
     // Initialize services
     const emailService = new NodemailerService();
-    await emailService.init();
+
+    // Initialize email service , which now i won't do because for each user we will have a different configuration
+    // await emailService.init();
 
     const csvService = new FileCSVService();
 
