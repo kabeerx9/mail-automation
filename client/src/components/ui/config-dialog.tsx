@@ -1,14 +1,25 @@
 // components/EmailConfigModal.jsx
 import { Dialog, DialogBackdrop, DialogPanel } from '@headlessui/react'
 import { useState } from 'react'
-import { SmtpConfig } from '../../services/api'
+
+interface SmtpConfig {
+  SMTP_HOST: string;
+  SMTP_PORT: string;
+  SMTP_USER: string;
+  SMTP_PASS: string;
+  EMAIL_FROM: string;
+  EMAIL_SUBJECT: string;
+  EMAIL_RATE_LIMIT: number;
+}
 
 interface ConfigErrors {
-  smtpHost?: string;
-  smtpPort?: string;
-  smtpUser?: string;
-  smtpPass?: string;
-  fromEmail?: string;
+  SMTP_HOST?: string;
+  SMTP_PORT?: string;
+  SMTP_USER?: string;
+  SMTP_PASS?: string;
+  EMAIL_FROM?: string;
+  EMAIL_SUBJECT?: string;
+  EMAIL_RATE_LIMIT?: string;
   general?: string;
 }
 
@@ -20,11 +31,13 @@ interface ConfigDialogProps {
 
 export default function ConfigDialog({ isOpen, onClose, onSubmit }: ConfigDialogProps) {
   const [formData, setFormData] = useState<SmtpConfig>({
-    smtpHost: '',
-    smtpPort: 587,
-    smtpUser: '',
-    smtpPass: '',
-    fromEmail: ''
+    SMTP_HOST: '',
+    SMTP_PORT: '587',
+    SMTP_USER: '',
+    SMTP_PASS: '',
+    EMAIL_FROM: '',
+    EMAIL_SUBJECT: '',
+    EMAIL_RATE_LIMIT: 60
   })
   const [errors, setErrors] = useState<ConfigErrors>({})
 
@@ -70,10 +83,10 @@ export default function ConfigDialog({ isOpen, onClose, onSubmit }: ConfigDialog
                 <input
                   required
                   className="w-full p-2 border rounded"
-                  value={formData.smtpHost}
-                  onChange={(e) => setFormData({ ...formData, smtpHost: e.target.value })}
+                  value={formData.SMTP_HOST}
+                  onChange={(e) => setFormData({ ...formData, SMTP_HOST: e.target.value })}
                 />
-                {errors.smtpHost && <p className="text-red-500 text-sm">{errors.smtpHost}</p>}
+                {errors.SMTP_HOST && <p className="text-red-500 text-sm">{errors.SMTP_HOST}</p>}
               </div>
 
               <div>
@@ -82,10 +95,10 @@ export default function ConfigDialog({ isOpen, onClose, onSubmit }: ConfigDialog
                   type="number"
                   required
                   className="w-full p-2 border rounded"
-                  value={formData.smtpPort}
-                  onChange={(e) => setFormData({ ...formData, smtpPort: parseInt(e.target.value, 10) })}
+                  value={formData.SMTP_PORT}
+                  onChange={(e) => setFormData({ ...formData, SMTP_PORT: e.target.value })}
                 />
-                {errors.smtpPort && <p className="text-red-500 text-sm">{errors.smtpPort}</p>}
+                {errors.SMTP_PORT && <p className="text-red-500 text-sm">{errors.SMTP_PORT}</p>}
               </div>
 
               <div>
@@ -93,10 +106,10 @@ export default function ConfigDialog({ isOpen, onClose, onSubmit }: ConfigDialog
                 <input
                   required
                   className="w-full p-2 border rounded"
-                  value={formData.smtpUser}
-                  onChange={(e) => setFormData({ ...formData, smtpUser: e.target.value })}
+                  value={formData.SMTP_USER}
+                  onChange={(e) => setFormData({ ...formData, SMTP_USER: e.target.value })}
                 />
-                {errors.smtpUser && <p className="text-red-500 text-sm">{errors.smtpUser}</p>}
+                {errors.SMTP_USER && <p className="text-red-500 text-sm">{errors.SMTP_USER}</p>}
               </div>
 
               <div>
@@ -105,22 +118,44 @@ export default function ConfigDialog({ isOpen, onClose, onSubmit }: ConfigDialog
                   type="password"
                   required
                   className="w-full p-2 border rounded"
-                  value={formData.smtpPass}
-                  onChange={(e) => setFormData({ ...formData, smtpPass: e.target.value })}
+                  value={formData.SMTP_PASS}
+                  onChange={(e) => setFormData({ ...formData, SMTP_PASS: e.target.value })}
                 />
-                {errors.smtpPass && <p className="text-red-500 text-sm">{errors.smtpPass}</p>}
+                {errors.SMTP_PASS && <p className="text-red-500 text-sm">{errors.SMTP_PASS}</p>}
               </div>
 
               <div>
                 <label className="block text-sm font-medium mb-1">From Email</label>
                 <input
-                  type="email"
                   required
                   className="w-full p-2 border rounded"
-                  value={formData.fromEmail}
-                  onChange={(e) => setFormData({ ...formData, fromEmail: e.target.value })}
+                  value={formData.EMAIL_FROM}
+                  onChange={(e) => setFormData({ ...formData, EMAIL_FROM: e.target.value })}
                 />
-                {errors.fromEmail && <p className="text-red-500 text-sm">{errors.fromEmail}</p>}
+                {errors.EMAIL_FROM && <p className="text-red-500 text-sm">{errors.EMAIL_FROM}</p>}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">Email Subject</label>
+                <input
+                  required
+                  className="w-full p-2 border rounded"
+                  value={formData.EMAIL_SUBJECT}
+                  onChange={(e) => setFormData({ ...formData, EMAIL_SUBJECT: e.target.value })}
+                />
+                {errors.EMAIL_SUBJECT && <p className="text-red-500 text-sm">{errors.EMAIL_SUBJECT}</p>}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">Rate Limit (emails per hour)</label>
+                <input
+                  type="number"
+                  required
+                  className="w-full p-2 border rounded"
+                  value={formData.EMAIL_RATE_LIMIT}
+                  onChange={(e) => setFormData({ ...formData, EMAIL_RATE_LIMIT: parseInt(e.target.value, 10) })}
+                />
+                {errors.EMAIL_RATE_LIMIT && <p className="text-red-500 text-sm">{errors.EMAIL_RATE_LIMIT}</p>}
               </div>
 
               {errors.general && <p className="text-red-500 text-sm">{errors.general}</p>}

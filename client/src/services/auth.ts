@@ -1,5 +1,5 @@
 import axios from 'axios';
-import axiosInstance from './axios';
+
 
 interface RegisterData {
   name: string;

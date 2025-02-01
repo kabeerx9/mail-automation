@@ -25,5 +25,5 @@ export const sendTestEmail = async (email: string): Promise<EmailResponse> => {
 };
 
 export const saveConfiguration = async (config: SmtpConfig): Promise<void> => {
-    await axiosInstance.post('/config/smtp', config);
+    await axiosInstance.post('/config/', config);
 };
