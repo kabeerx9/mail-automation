@@ -6,9 +6,10 @@ import toast from 'react-hot-toast';
 interface Props {
     recruiters: Recruiter[];
     onRefresh: () => void;
+    useAI: boolean;
 }
 
-export function StatusPanel({ recruiters, onRefresh }: Props) {
+export function StatusPanel({ recruiters, onRefresh, useAI }: Props) {
     const [isProcessing, setIsProcessing] = useState(false);
     const [statusMessage, setStatusMessage] = useState('Ready to send emails');
     const [showModal, setShowModal] = useState(false);
@@ -42,7 +43,7 @@ export function StatusPanel({ recruiters, onRefresh }: Props) {
         if (!testEmail.trim()) return;
 
         try {
-            const promise = sendTestEmail(testEmail);
+            const promise = sendTestEmail(testEmail, useAI);
             await toast.promise(promise, {
                 loading: 'Sending test email...',
                 success: 'Test email sent successfully!',

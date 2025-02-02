@@ -21,8 +21,11 @@ export const sendEmails = async (): Promise<EmailResponse> => {
     return response.data;
 };
 
-export const sendTestEmail = async (email: string): Promise<EmailResponse> => {
-    const response = await axiosInstance.post('/emails/test', { name : email , email : email });
+export const sendTestEmail = async (email: string, useAI: boolean = false): Promise<EmailResponse> => {
+    const response = await axiosInstance.post('/emails/test', {
+        email: email,
+        useAI: useAI
+    });
     return response.data;
 };
 
