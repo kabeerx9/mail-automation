@@ -1,191 +1,115 @@
 import { Request, Response } from 'express';
 import prisma from '../lib/prisma';
+import { z } from 'zod';
+import { UnauthorizedError, NotFoundError, ConflictError } from '../types/errors';
 
-interface ConfigurationInput {
-    SMTP_HOST: string;
-    SMTP_PORT: string;
-    SMTP_USER: string;
-    SMTP_PASS: string;
-    EMAIL_FROM: string;
-    EMAIL_SUBJECT: string;
-    EMAIL_RATE_LIMIT: number;
-}
+// Zod schema for configuration validation
+const configurationSchema = z.object({
+    SMTP_HOST: z.string().min(1, 'SMTP host is required'),
+    SMTP_PORT: z.string().min(1, 'SMTP port is required'),
+    SMTP_USER: z.string().min(1, 'SMTP user is required'),
+    SMTP_PASS: z.string().min(1, 'SMTP password is required'),
+    EMAIL_FROM: z.string().email('Invalid email format'),
+    EMAIL_SUBJECT: z.string().min(1, 'Email subject is required'),
+    EMAIL_RATE_LIMIT: z.number().int().positive('Rate limit must be a positive number')
+});
+
 
 export class ConfigController {
     addConfiguration = async (req: Request, res: Response) => {
         const userId = req.user?.id;
         if (!userId) {
-            return res.status(401).json({
-                success: false,
-                message: 'Unauthorized'
-            });
+            throw new UnauthorizedError();
         }
 
-        const {
-            SMTP_HOST,
-            SMTP_PORT,
-            SMTP_USER,
-            SMTP_PASS,
-            EMAIL_FROM,
-            EMAIL_SUBJECT,
-            EMAIL_RATE_LIMIT
-        } = req.body as ConfigurationInput;
+        // Parse and validate the request body
+        const validatedData = configurationSchema.parse({
+            ...req.body,
+            EMAIL_RATE_LIMIT: Number(req.body.EMAIL_RATE_LIMIT)
+        });
 
-        try {
-            // Check if all required fields are present
-            if (!SMTP_HOST || !SMTP_PORT || !SMTP_USER || !SMTP_PASS || !EMAIL_FROM || !EMAIL_SUBJECT || !EMAIL_RATE_LIMIT) {
-                return res.status(400).json({
-                    success: false,
-                    message: 'All configuration fields are required'
-                });
-            }
+        // Check if configuration already exists for this user
+        const existingConfig = await prisma.configuration.findUnique({
+            where: { userId }
+        });
 
-            // Check if configuration already exists for this user
-            const existingConfig = await prisma.configuration.findUnique({
-                where: { userId }
-            });
-
-            if (existingConfig) {
-                return res.status(400).json({
-                    success: false,
-                    message: 'Configuration already exists for this user'
-                });
-            }
-
-            // Create new configuration
-            const configuration = await prisma.configuration.create({
-                data: {
-                    SMTP_HOST,
-                    SMTP_PORT,
-                    SMTP_USER,
-                    SMTP_PASS,
-                    EMAIL_FROM,
-                    EMAIL_SUBJECT,
-                    EMAIL_RATE_LIMIT: Number(EMAIL_RATE_LIMIT),
-                    userId
-                }
-            });
-
-            res.status(201).json({
-                success: true,
-                message: 'Configuration added successfully',
-            });
-        } catch (error) {
-            res.status(500).json({
-                success: false,
-                message: 'Error adding configuration',
-                error: error instanceof Error ? error.message : 'Unknown error'
-            });
+        if (existingConfig) {
+            throw new ConflictError('Configuration already exists for this user');
         }
+
+        // Create new configuration
+        await prisma.configuration.create({
+            data: {
+                ...validatedData,
+                userId
+            }
+        });
+
+        res.status(201).json({
+            success: true,
+            message: 'Configuration added successfully',
+        });
     }
 
     getConfiguration = async (req: Request, res: Response) => {
         const userId = req.user?.id;
         if (!userId) {
-            return res.status(401).json({
-                success: false,
-                message: 'Unauthorized'
-            });
+            throw new UnauthorizedError();
         }
 
-        try {
-            const configuration = await prisma.configuration.findUnique({
-                where: { userId },
-                select: {
-                    SMTP_HOST: true,
-                    SMTP_PORT: true,
-                    SMTP_USER: true,
-                    SMTP_PASS: true,
-                    EMAIL_FROM: true,
-                    EMAIL_SUBJECT: true,
-                    EMAIL_RATE_LIMIT: true
-                }
-            });
-
-            if (!configuration) {
-                return res.status(404).json({
-                    success: false,
-                    message: 'Configuration not found'
-                });
+        const configuration = await prisma.configuration.findUnique({
+            where: { userId },
+            select: {
+                SMTP_HOST: true,
+                SMTP_PORT: true,
+                SMTP_USER: true,
+                SMTP_PASS: true,
+                EMAIL_FROM: true,
+                EMAIL_SUBJECT: true,
+                EMAIL_RATE_LIMIT: true
             }
+        });
 
-            res.status(200).json({
-                success: true,
-                data: configuration
-            });
-        } catch (error) {
-            res.status(500).json({
-                success: false,
-                message: 'Error fetching configuration',
-                error: error instanceof Error ? error.message : 'Unknown error'
-            });
+        if (!configuration) {
+            throw new NotFoundError('Configuration not found');
         }
+
+        res.status(200).json({
+            success: true,
+            data: configuration
+        });
     }
 
     updateConfiguration = async (req: Request, res: Response) => {
         const userId = req.user?.id;
         if (!userId) {
-            return res.status(401).json({
-                success: false,
-                message: 'Unauthorized'
-            });
+            throw new UnauthorizedError();
         }
 
-        const {
-            SMTP_HOST,
-            SMTP_PORT,
-            SMTP_USER,
-            SMTP_PASS,
-            EMAIL_FROM,
-            EMAIL_SUBJECT,
-            EMAIL_RATE_LIMIT
-        } = req.body as ConfigurationInput;
+        // Parse and validate the request body
+        const validatedData = configurationSchema.parse({
+            ...req.body,
+            EMAIL_RATE_LIMIT: Number(req.body.EMAIL_RATE_LIMIT)
+        });
 
-        try {
-            // Check if all required fields are present
-            if (!SMTP_HOST || !SMTP_PORT || !SMTP_USER || !SMTP_PASS || !EMAIL_FROM || !EMAIL_SUBJECT || !EMAIL_RATE_LIMIT) {
-                return res.status(400).json({
-                    success: false,
-                    message: 'All configuration fields are required'
-                });
-            }
+        // Check if configuration exists for this user
+        const existingConfig = await prisma.configuration.findUnique({
+            where: { userId }
+        });
 
-            // Check if configuration exists for this user
-            const existingConfig = await prisma.configuration.findUnique({
-                where: { userId }
-            });
-
-            if (!existingConfig) {
-                return res.status(404).json({
-                    success: false,
-                    message: 'Configuration not found'
-                });
-            }
-
-            // Update configuration
-            const configuration = await prisma.configuration.update({
-                where: { userId },
-                data: {
-                    SMTP_HOST,
-                    SMTP_PORT,
-                    SMTP_USER,
-                    SMTP_PASS,
-                    EMAIL_FROM,
-                    EMAIL_SUBJECT,
-                    EMAIL_RATE_LIMIT: Number(EMAIL_RATE_LIMIT)
-                }
-            });
-
-            res.status(200).json({
-                success: true,
-                message: 'Configuration updated successfully',
-            });
-        } catch (error) {
-            res.status(500).json({
-                success: false,
-                message: 'Error updating configuration',
-                error: error instanceof Error ? error.message : 'Unknown error'
-            });
+        if (!existingConfig) {
+            throw new NotFoundError('Configuration not found');
         }
+
+        // Update configuration
+        await prisma.configuration.update({
+            where: { userId },
+            data: validatedData
+        });
+
+        res.status(200).json({
+            success: true,
+            message: 'Configuration updated successfully',
+        });
     }
 }

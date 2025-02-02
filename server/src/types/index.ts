@@ -41,6 +41,14 @@ export interface TokenUser {
     has_configured: boolean;
 }
 
+export interface TokenPayload {
+    id: string;
+    email: string;
+    name?: string;
+    type: 'access' | 'refresh';
+    has_configured: boolean;
+}
+
 declare global {
     namespace Express {
         interface Request {

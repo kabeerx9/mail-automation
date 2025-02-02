@@ -22,7 +22,7 @@ export const sendEmails = async (): Promise<EmailResponse> => {
 };
 
 export const sendTestEmail = async (email: string): Promise<EmailResponse> => {
-    const response = await axiosInstance.post('/emails/test', { email });
+    const response = await axiosInstance.post('/emails/test', { name : email , email : email });
     return response.data;
 };
 

@@ -10,6 +10,7 @@ import createAuthRouter from './routes/auth.routes';
 import configRoutes from './routes/config.routes';
 import cors from 'cors';
 import testRoutes from './routes/test.routes';
+import { errorHandler } from './middleware/errorHandler';
 
 const app = express();
 
@@ -45,15 +46,8 @@ async function bootstrap() {
     app.use('/api/config', configRoutes);
     app.use('/api/test', testRoutes);
 
-    // Error handling middleware
-    app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
-      logger.error('Unhandled error', { error: err });
-      res.status(500).json({
-        success: false,
-        message: 'Internal server error',
-        error: config.isDev ? err.message : undefined,
-      });
-    });
+    // Global error handling middleware
+    app.use(errorHandler);
 
     // Start server
     app.listen(config.port, () => {
