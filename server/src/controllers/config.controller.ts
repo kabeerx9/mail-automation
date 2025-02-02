@@ -69,7 +69,6 @@ export class ConfigController {
             res.status(201).json({
                 success: true,
                 message: 'Configuration added successfully',
-                data: configuration
             });
         } catch (error) {
             res.status(500).json({
@@ -91,7 +90,16 @@ export class ConfigController {
 
         try {
             const configuration = await prisma.configuration.findUnique({
-                where: { userId }
+                where: { userId },
+                select: {
+                    SMTP_HOST: true,
+                    SMTP_PORT: true,
+                    SMTP_USER: true,
+                    SMTP_PASS: true,
+                    EMAIL_FROM: true,
+                    EMAIL_SUBJECT: true,
+                    EMAIL_RATE_LIMIT: true
+                }
             });
 
             if (!configuration) {
@@ -109,6 +117,73 @@ export class ConfigController {
             res.status(500).json({
                 success: false,
                 message: 'Error fetching configuration',
+                error: error instanceof Error ? error.message : 'Unknown error'
+            });
+        }
+    }
+
+    updateConfiguration = async (req: Request, res: Response) => {
+        const userId = req.user?.id;
+        if (!userId) {
+            return res.status(401).json({
+                success: false,
+                message: 'Unauthorized'
+            });
+        }
+
+        const {
+            SMTP_HOST,
+            SMTP_PORT,
+            SMTP_USER,
+            SMTP_PASS,
+            EMAIL_FROM,
+            EMAIL_SUBJECT,
+            EMAIL_RATE_LIMIT
+        } = req.body as ConfigurationInput;
+
+        try {
+            // Check if all required fields are present
+            if (!SMTP_HOST || !SMTP_PORT || !SMTP_USER || !SMTP_PASS || !EMAIL_FROM || !EMAIL_SUBJECT || !EMAIL_RATE_LIMIT) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'All configuration fields are required'
+                });
+            }
+
+            // Check if configuration exists for this user
+            const existingConfig = await prisma.configuration.findUnique({
+                where: { userId }
+            });
+
+            if (!existingConfig) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Configuration not found'
+                });
+            }
+
+            // Update configuration
+            const configuration = await prisma.configuration.update({
+                where: { userId },
+                data: {
+                    SMTP_HOST,
+                    SMTP_PORT,
+                    SMTP_USER,
+                    SMTP_PASS,
+                    EMAIL_FROM,
+                    EMAIL_SUBJECT,
+                    EMAIL_RATE_LIMIT: Number(EMAIL_RATE_LIMIT)
+                }
+            });
+
+            res.status(200).json({
+                success: true,
+                message: 'Configuration updated successfully',
+            });
+        } catch (error) {
+            res.status(500).json({
+                success: false,
+                message: 'Error updating configuration',
                 error: error instanceof Error ? error.message : 'Unknown error'
             });
         }

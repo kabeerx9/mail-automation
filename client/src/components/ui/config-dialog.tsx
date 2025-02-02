@@ -1,16 +1,10 @@
 // components/EmailConfigModal.jsx
 import { Dialog, DialogBackdrop, DialogPanel } from '@headlessui/react'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import axiosInstance from '../../services/axios'
+import { saveConfiguration, SmtpConfig, updateConfiguration } from '../../services/api';
+import toast from 'react-hot-toast';
 
-interface SmtpConfig {
-  SMTP_HOST: string;
-  SMTP_PORT: string;
-  SMTP_USER: string;
-  SMTP_PASS: string;
-  EMAIL_FROM: string;
-  EMAIL_SUBJECT: string;
-  EMAIL_RATE_LIMIT: number;
-}
 
 interface ConfigErrors {
   SMTP_HOST?: string;
@@ -26,10 +20,10 @@ interface ConfigErrors {
 interface ConfigDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (formData: SmtpConfig) => Promise<void>;
+  existingConfig: SmtpConfig | null
 }
 
-export default function ConfigDialog({ isOpen, onClose, onSubmit }: ConfigDialogProps) {
+export default function ConfigDialog({ isOpen, onClose, existingConfig }: ConfigDialogProps) {
   const [formData, setFormData] = useState<SmtpConfig>({
     SMTP_HOST: '',
     SMTP_PORT: '587',
@@ -39,20 +33,82 @@ export default function ConfigDialog({ isOpen, onClose, onSubmit }: ConfigDialog
     EMAIL_SUBJECT: '',
     EMAIL_RATE_LIMIT: 60
   })
-  const [errors, setErrors] = useState<ConfigErrors>({})
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
+  useEffect(() => {
+    if (existingConfig) {
+      setFormData({
+        SMTP_HOST: existingConfig.SMTP_HOST,
+        SMTP_PORT: existingConfig.SMTP_PORT,
+        SMTP_USER: existingConfig.SMTP_USER,
+        SMTP_PASS: existingConfig.SMTP_PASS,
+        EMAIL_FROM: existingConfig.EMAIL_FROM,
+        EMAIL_SUBJECT: existingConfig.EMAIL_SUBJECT,
+        EMAIL_RATE_LIMIT: existingConfig.EMAIL_RATE_LIMIT
+      });
+    }
+  }, [existingConfig]);
+
+  console.log("existingConfig inside confirMDialog", existingConfig)
+  console.log("formData inside confirMDialog", formData)
+
+  const [errors, setErrors] = useState<ConfigErrors>({})
+  const [isLoading, setIsLoading] = useState(false)
+  const [loadingMessage, setLoadingMessage] = useState('')
+
+  const handleAddConfiguration = async (data: SmtpConfig) => {
+    setIsLoading(true)
+    setLoadingMessage('Adding configuration...')
     try {
-      await onSubmit(formData)
+      const promise = saveConfiguration(data);
+      await toast.promise(promise, {
+        loading: 'Adding configuration...',
+        success: 'Configuration added successfully!',
+        error: 'Failed to add configuration'
+      });
       onClose()
     } catch (error) {
       if (error instanceof Error) {
         const apiError = error as { response?: { data?: { errors?: ConfigErrors } } }
-        setErrors(apiError.response?.data?.errors || { general: 'Configuration failed' })
+        setErrors(apiError.response?.data?.errors || { general: 'Failed to add configuration' })
       } else {
         setErrors({ general: 'An unexpected error occurred' })
       }
+    } finally {
+      setIsLoading(false)
+      setLoadingMessage('')
+    }
+  }
+
+  const handleUpdateConfiguration = async (data: SmtpConfig) => {
+    setIsLoading(true)
+    setLoadingMessage('Updating configuration...')
+    try {
+      const promise = updateConfiguration(data);
+      await toast.promise(promise, {
+        loading: 'Updating configuration...',
+        success: 'Configuration updated successfully!',
+        error: 'Failed to update configuration'
+      });
+      onClose()
+    } catch (error) {
+      if (error instanceof Error) {
+        const apiError = error as { response?: { data?: { errors?: ConfigErrors } } }
+        setErrors(apiError.response?.data?.errors || { general: 'Failed to update configuration' })
+      } else {
+        setErrors({ general: 'An unexpected error occurred' })
+      }
+    } finally {
+      setIsLoading(false)
+      setLoadingMessage('')
+    }
+  }
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    if (existingConfig) {
+      await handleUpdateConfiguration(formData)
+    } else {
+      await handleAddConfiguration(formData)
     }
   }
 
@@ -73,7 +129,7 @@ export default function ConfigDialog({ isOpen, onClose, onSubmit }: ConfigDialog
           className="w-full max-w-md transform overflow-hidden rounded-lg bg-white p-6 text-left shadow-xl duration-300 ease-out data-[closed]:scale-95 data-[closed]:opacity-0"
         >
           <Dialog.Title className="text-lg font-medium mb-4">
-            Email Configuration Required
+            {existingConfig ? 'Update Configuration' : 'Add Configuration'}
           </Dialog.Title>
 
           <form onSubmit={handleSubmit}>
@@ -158,14 +214,27 @@ export default function ConfigDialog({ isOpen, onClose, onSubmit }: ConfigDialog
                 {errors.EMAIL_RATE_LIMIT && <p className="text-red-500 text-sm">{errors.EMAIL_RATE_LIMIT}</p>}
               </div>
 
-              {errors.general && <p className="text-red-500 text-sm">{errors.general}</p>}
+              {errors.general && <p className="text-red-500 text-sm mt-2">{errors.general}</p>}
+
+              {loadingMessage && (
+                <p className="text-blue-500 text-sm mt-2">{loadingMessage}</p>
+              )}
 
               <div className="flex justify-end space-x-3 mt-6">
                 <button
-                  type="submit"
-                  className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors duration-200"
+                  type="button"
+                  onClick={onClose}
+                  className="px-4 py-2 text-gray-600 rounded hover:bg-gray-100 transition-colors duration-200"
+                  disabled={isLoading}
                 >
-                  Save Configuration
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors duration-200 disabled:bg-blue-300"
+                  disabled={isLoading}
+                >
+                  {isLoading ? 'Processing...' : existingConfig ? 'Update' : 'Save'}
                 </button>
               </div>
             </div>

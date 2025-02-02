@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Recruiter } from '../types';
 import { sendEmails, sendTestEmail } from '../services/api';
+import toast from 'react-hot-toast';
 
 interface Props {
     recruiters: Recruiter[];
@@ -23,15 +24,14 @@ export function StatusPanel({ recruiters, onRefresh }: Props) {
 
         try {
             setIsProcessing(true);
-            setStatusMessage('Sending emails...');
-
-            const result = await sendEmails();
-            if (result.success) {
-                setStatusMessage(`Emails processed: ${result.details?.sent} sent, ${result.details?.failed} failed`);
-                onRefresh();
-            }
+            const promise = sendEmails();
+            await toast.promise(promise, {
+                loading: 'Sending emails...',
+                success: (result) => `Emails processed: ${result.details?.sent} sent, ${result.details?.failed} failed`,
+                error: 'Failed to send emails'
+            });
+            onRefresh();
         } catch (error) {
-            setStatusMessage('Error sending emails');
             console.error('Error:', error);
         } finally {
             setIsProcessing(false);
@@ -42,15 +42,15 @@ export function StatusPanel({ recruiters, onRefresh }: Props) {
         if (!testEmail.trim()) return;
 
         try {
-            setStatusMessage('Sending test email...');
-            const result = await sendTestEmail(testEmail);
-            if (result.success) {
-                setStatusMessage('Test email sent successfully');
-                setShowModal(false);
-                setTestEmail('');
-            }
+            const promise = sendTestEmail(testEmail);
+            await toast.promise(promise, {
+                loading: 'Sending test email...',
+                success: 'Test email sent successfully!',
+                error: 'Failed to send test email'
+            });
+            setShowModal(false);
+            setTestEmail('');
         } catch (error) {
-            setStatusMessage('Error sending test email');
             console.error('Error:', error);
         }
     };

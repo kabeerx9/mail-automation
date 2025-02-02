@@ -122,6 +122,7 @@ export class AuthController {
         }
 
         const hasConfiguration = user.configuration !== null;
+        console.log("in login  checking configuration ", hasConfiguration)
 
         const accessToken = jwt.sign(
             {

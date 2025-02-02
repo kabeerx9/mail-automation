@@ -1,11 +1,11 @@
 import { jwtDecode } from 'jwt-decode';
 
-interface JWTPayload {
+export interface JWTPayload {
   id: string;
   email: string;
   name?: string;
   type: 'access' | 'refresh';
-  has_configuration : boolean;
+  has_configured : boolean;
 }
 
 export const getUserFromToken = (): JWTPayload | null => {
@@ -13,7 +13,9 @@ export const getUserFromToken = (): JWTPayload | null => {
   if (!token) return null;
 
   try {
-    return jwtDecode<JWTPayload>(token);
+    const decoded = jwtDecode<JWTPayload>(token);
+    console.log({decoded})
+    return decoded;
   } catch {
     return null;
   }

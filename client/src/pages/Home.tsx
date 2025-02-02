@@ -1,13 +1,9 @@
 import { useEffect, useState } from 'react';
-import { getUserFromToken } from '../utils/token';
+import { getUserFromToken, JWTPayload } from '../utils/token';
 import { useNavigate } from 'react-router';
 import ConfigDialog from '../components/ui/config-dialog';
-import { saveConfiguration, SmtpConfig } from '../services/api';
+import { fetchConfiguration, SmtpConfig } from '../services/api';
 
-interface User {
-  name: string;
-  has_configuration: boolean;
-}
 
 export default function Home() {
   const [userName, setUserName] = useState<string>('');
@@ -15,21 +11,29 @@ export default function Home() {
   const navigate = useNavigate();
   const [configDialogOpen, setConfigDialogOpen] = useState<boolean>(false);
 
+  const [existingConfig, setExistingConfig] = useState<SmtpConfig | null>(null);
+
+
   useEffect(() => {
-    const user = getUserFromToken() as User | null;
+    const user = getUserFromToken() as JWTPayload | null
+    console.log({user})
     if (user?.name) {
       setUserName(user.name);
     }
-    if(user?.has_configuration){
+    if(user?.has_configured){
+        console.log("YIPEEEEE")
       setHasConfig(true);
     }
   }, []);
 
-  const handleConfigSubmit = async (formData: SmtpConfig) => {
-    await saveConfiguration(formData);
-    setConfigDialogOpen(false);
-    setHasConfig(true);
-  };
+  useEffect(() => {
+    fetchConfiguration().then((config)=>{
+        if(config){
+            setExistingConfig(config);
+        }
+    })
+  }, [])
+
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -109,7 +113,7 @@ export default function Home() {
       <ConfigDialog
         isOpen={configDialogOpen}
         onClose={() => setConfigDialogOpen(false)}
-        onSubmit={handleConfigSubmit}
+        existingConfig={existingConfig}
       />
     </div>
   );

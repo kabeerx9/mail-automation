@@ -7,5 +7,6 @@ const configController = new ConfigController();
 
 router.post('/', authMiddleware, configController.addConfiguration);
 router.get('/', authMiddleware, configController.getConfiguration);
+router.put('/', authMiddleware, configController.updateConfiguration);
 
 export default router;
