@@ -1,6 +1,8 @@
 import dotenv from 'dotenv';
 import { z } from 'zod';
 
+export const AI_MODEL = 'text-embedding-nomic-embed-text-v1.5'
+
 dotenv.config();
 
 const envSchema = z.object({
