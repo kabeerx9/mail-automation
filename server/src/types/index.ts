@@ -13,7 +13,16 @@ export const RecruiterSchema = z.object({
   Role : z.string(),
 });
 
+export const RecruiterSchemaDatabase = z.object({
+    name: z.string(),
+    email: z.string().email(),
+    company: z.string(),
+    reachOutFrequency: z.number().int().min(0),
+    lastReachOutDate: z.string().optional(),
+})
+
 export type Recruiter = z.infer<typeof RecruiterSchema>;
+export type RecruiterDatabase = z.infer<typeof RecruiterSchemaDatabase>;
 
 export interface EmailService {
   sendEmail(to: string, body: string , transporter: nodemailer.Transporter , configuration : Configuration ): Promise<void>;

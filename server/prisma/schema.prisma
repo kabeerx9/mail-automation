@@ -23,7 +23,7 @@ model User {
   updatedAt    DateTime @updatedAt
 
   configuration Configuration?
-
+  recruiters Recruiter[]
   @@map("users")
 }
 
@@ -42,4 +42,20 @@ model Configuration{
     user User @relation(fields: [userId], references: [id])
 
     @@map("configurations")
+}
+
+model Recruiter {
+    id String @id @default(uuid())
+    name String
+    email String @unique
+    company String
+    reachOutFrequency Int @default(0)
+    lastReachOutDate DateTime?
+    userId String
+    user User @relation(fields: [userId], references: [id])
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@map("recruiters")
 }

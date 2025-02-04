@@ -1,16 +1,16 @@
+import cors from 'cors';
 import express from 'express';
-import { NodemailerService } from './services/email.service';
-import { FileCSVService } from './services/csv.service';
-import { EmailController } from './controllers/email.controller';
-import { createEmailRouter } from './routes/email.routes';
 import config from './config';
-import logger from './utils/logger';
 import { AuthController } from './controllers/auth.controller';
+import { EmailController } from './controllers/email.controller';
+import { errorHandler } from './middleware/errorHandler';
 import createAuthRouter from './routes/auth.routes';
 import configRoutes from './routes/config.routes';
-import cors from 'cors';
+import { createEmailRouter } from './routes/email.routes';
 import testRoutes from './routes/test.routes';
-import { errorHandler } from './middleware/errorHandler';
+import { FileCSVService } from './services/csv.service';
+import { NodemailerService } from './services/email.service';
+import logger from './utils/logger';
 
 const app = express();
 

@@ -1,27 +1,26 @@
-import { useState, useEffect } from 'react';
-import { Switch } from '@headlessui/react';
-import { StatusPanel } from './components/StatusPanel';
-import { RecruiterTable } from './components/RecruiterTable';
-import { fetchRecruiters } from './services/api';
-import { Recruiter } from './types';
+import { useState, useEffect } from "react";
+import { Switch } from "@headlessui/react";
+import { StatusPanel } from "./components/StatusPanel";
+import { RecruiterTable } from "./components/RecruiterTable";
+import { fetchRecruiters } from "./services/api";
+import { Recruiter } from "./types";
 
 function App() {
   const [recruiters, setRecruiters] = useState<Recruiter[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [useAI, setUseAI] = useState(() => {
-    const saved = localStorage.getItem('useAI');
+    const saved = localStorage.getItem("useAI");
     return saved ? JSON.parse(saved) : false;
   });
 
   const loadData = async () => {
     try {
       const data = await fetchRecruiters();
-      console.log("data", data);
       setRecruiters(data);
       setError(null);
     } catch (err) {
-      setError('Failed to load recruiter data');
-      console.error('Error:', err);
+      setError("Failed to load recruiter data");
+      console.error("Error:", err);
     }
   };
 
@@ -30,26 +29,28 @@ function App() {
   }, []);
 
   useEffect(() => {
-    localStorage.setItem('useAI', JSON.stringify(useAI));
+    localStorage.setItem("useAI", JSON.stringify(useAI));
   }, [useAI]);
 
   return (
     <div className="min-h-screen bg-gray-100">
       <div className="container mx-auto px-4 py-8">
         <header className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Email Automation Dashboard</h1>
+          <h1 className="text-3xl font-bold text-gray-900">
+            Email Automation Dashboard
+          </h1>
           <div className="mt-4 flex items-center">
             <Switch
               checked={useAI}
               onChange={setUseAI}
               className={`${
-                useAI ? 'bg-blue-600' : 'bg-gray-200'
+                useAI ? "bg-blue-600" : "bg-gray-200"
               } relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2`}
             >
               <span className="sr-only">Use AI for email generation</span>
               <span
                 className={`${
-                  useAI ? 'translate-x-6' : 'translate-x-1'
+                  useAI ? "translate-x-6" : "translate-x-1"
                 } inline-block h-4 w-4 transform rounded-full bg-white transition-transform`}
               />
             </Switch>
@@ -65,7 +66,11 @@ function App() {
           </div>
         ) : (
           <>
-            <StatusPanel recruiters={recruiters} onRefresh={loadData} useAI={useAI} />
+            <StatusPanel
+              recruiters={recruiters}
+              onRefresh={loadData}
+              useAI={useAI}
+            />
             <RecruiterTable recruiters={recruiters} />
           </>
         )}
