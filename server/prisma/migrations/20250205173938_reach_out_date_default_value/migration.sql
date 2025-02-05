@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "recruiters" ALTER COLUMN "lastReachOutDate" SET DEFAULT CURRENT_TIMESTAMP;

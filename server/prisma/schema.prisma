@@ -50,7 +50,7 @@ model Recruiter {
     email String @unique
     company String
     reachOutFrequency Int @default(0)
-    lastReachOutDate DateTime?
+    lastReachOutDate DateTime? @default(now())
     userId String
     user User @relation(fields: [userId], references: [id])
 
