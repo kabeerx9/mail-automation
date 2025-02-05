@@ -8,13 +8,11 @@ export default function MainLayout() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
+    <div className="full-screen bg-gray-50">
       <MainNavbar />
-      <main className="flex-1 flex flex-col h-full">
-        <div className="flex-1 px-4 sm:px-6 lg:px-8 h-full">
-          <div className="h-full">
-            <Outlet />
-          </div>
+      <main className="page-container">
+        <div className="flex-1 scrollable">
+          <Outlet />
         </div>
       </main>
     </div>

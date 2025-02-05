@@ -1,27 +1,33 @@
 import { useQuery } from "@tanstack/react-query";
 import { checkRecruiters } from "./services/api";
 import EmailDashboard from "./components/email-dashboard";
-import RecruiterStatus from "./components/upload-recruiters";
+import UploadRecruiters from "./components/upload-recruiters";
+
 
 function App() {
   const { data , isLoading } = useQuery({
     queryKey: ['recruiters-check'],
-    queryFn: checkRecruiters
+    queryFn: checkRecruiters,
+    staleTime: 1000 * 60 * 60,
   });
 
   const hasRecruiters = data && data.length > 0;
 
   return (
-    <div className="w-full h-full bg-gray-800">
+    <div className="full-screen bg-gray-800">
       {isLoading ? (
-        <div className="flex justify-center items-center min-h-screen">
+        <div className="flex-1 flex justify-center items-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
         </div>
       ) : hasRecruiters ? (
-        <EmailDashboard />
+        <div className="flex-1">
+          <EmailDashboard />
+        </div>
       ) : (
-        <div className="container mx-auto px-4 py-8">
-          <RecruiterStatus />
+        <div className="flex-1 scrollable p-8">
+          <div className="container mx-auto">
+            <UploadRecruiters />
+          </div>
         </div>
       )}
     </div>

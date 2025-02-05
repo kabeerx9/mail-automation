@@ -3,12 +3,36 @@
 @tailwind utilities;
 
 @layer base {
-  html, body, #root {
-    @apply h-full min-h-screen bg-gray-50;
+  :root {
+    @apply h-full;
+  }
+
+  html,
+  body {
+    @apply h-full overflow-hidden;
   }
 
   body {
     @apply text-gray-800 antialiased;
+  }
+
+  #root {
+    @apply h-full flex flex-col;
+    isolation: isolate;
+  }
+}
+
+@layer utilities {
+  .full-screen {
+    @apply h-full w-full flex flex-col;
+  }
+
+  .page-container {
+    @apply flex-1 flex flex-col overflow-hidden;
+  }
+
+  .scrollable {
+    @apply overflow-y-auto;
   }
 }
 
