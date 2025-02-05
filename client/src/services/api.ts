@@ -1,5 +1,6 @@
 import { Recruiter, EmailResponse } from '../types';
 import axiosInstance from './axios';
+import axios from './axios';
 
 export interface SmtpConfig {
     SMTP_HOST: string;
@@ -9,6 +10,15 @@ export interface SmtpConfig {
     EMAIL_FROM: string;
     EMAIL_SUBJECT: string;
     EMAIL_RATE_LIMIT: number;
+}
+
+export interface Recruiter {
+    id : string;
+    name :string;
+    company : string;
+    email : string;
+    lastReachOutDate : Date;
+    reachOutFrequency : number;
 }
 
 export const fetchRecruiters = async (): Promise<Recruiter[]> => {
@@ -37,7 +47,18 @@ export const updateConfiguration = async (config: SmtpConfig): Promise<void> => 
     await axiosInstance.put('/config/', config);
 };
 
-export const fetchConfiguration = async (): Promise<SmtpConfig> => {
-    const response = await axiosInstance.get('/config/');
+export const checkRecruiters = async (): Promise<Recruiter[]> => {
+    const response = await axios.get('/recruiters/');
+    console.log("response", response.data);
     return response.data.data;
+};
+
+export const fetchConfiguration = async (): Promise<SmtpConfig | null> => {
+    try {
+        const response = await axios.get('/config');
+        console.log("response", response.data);
+        return response.data.data;
+    } catch (error) {
+        return null;
+    }
 };

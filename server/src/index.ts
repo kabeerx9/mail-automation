@@ -6,6 +6,7 @@ import { EmailController } from './controllers/email.controller';
 import { errorHandler } from './middleware/errorHandler';
 import createAuthRouter from './routes/auth.routes';
 import configRoutes from './routes/config.routes';
+import recruiterRoutes from './routes/recruiters.routes';
 import { createEmailRouter } from './routes/email.routes';
 import testRoutes from './routes/test.routes';
 import { FileCSVService } from './services/csv.service';
@@ -45,6 +46,7 @@ async function bootstrap() {
     app.use('/api/auth', createAuthRouter(authController));
     app.use('/api/config', configRoutes);
     app.use('/api/test', testRoutes);
+    app.use('/api/recruiters', recruiterRoutes);
 
     // Global error handling middleware
     app.use(errorHandler);

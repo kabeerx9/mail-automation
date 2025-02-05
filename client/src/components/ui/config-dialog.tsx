@@ -1,7 +1,6 @@
 // components/EmailConfigModal.jsx
 import { Dialog, DialogBackdrop, DialogPanel } from '@headlessui/react'
 import { useState, useEffect } from 'react'
-import axiosInstance from '../../services/axios'
 import { saveConfiguration, SmtpConfig, updateConfiguration } from '../../services/api';
 import toast from 'react-hot-toast';
 
@@ -48,8 +47,6 @@ export default function ConfigDialog({ isOpen, onClose, existingConfig }: Config
     }
   }, [existingConfig]);
 
-  console.log("existingConfig inside confirMDialog", existingConfig)
-  console.log("formData inside confirMDialog", formData)
 
   const [errors, setErrors] = useState<ConfigErrors>({})
   const [isLoading, setIsLoading] = useState(false)

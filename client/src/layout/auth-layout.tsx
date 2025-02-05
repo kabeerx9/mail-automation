@@ -1,5 +1,5 @@
 import { Outlet, Navigate } from 'react-router';
-import AuthNavbar from '../components/AuthNavbar';
+import AuthNavbar from '../components/auth-navbar';
 import { authService } from '../services/auth';
 
 export default function AuthLayout() {
