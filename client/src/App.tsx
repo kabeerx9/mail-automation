@@ -14,7 +14,7 @@ function App() {
   const hasRecruiters = data && data.length > 0;
 
   return (
-    <div className="full-screen bg-gray-800">
+    <div className="full-screen bg-gray-100">
       {isLoading ? (
         <div className="flex-1 flex justify-center items-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
