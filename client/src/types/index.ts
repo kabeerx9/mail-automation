@@ -1,3 +1,5 @@
+export type EmailStatus = 'idle' | 'loading' | 'success' | 'error';
+
 export interface Recruiter {
     id : string;
     name :string;
