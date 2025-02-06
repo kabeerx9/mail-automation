@@ -3,9 +3,8 @@ import { checkRecruiters } from "./services/api";
 import EmailDashboard from "./components/email-dashboard";
 import UploadRecruiters from "./components/upload-recruiters";
 
-
 function App() {
-  const { data , isLoading } = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey: ['recruiters-check'],
     queryFn: checkRecruiters,
     staleTime: 1000 * 60 * 60,
@@ -21,7 +20,7 @@ function App() {
         </div>
       ) : hasRecruiters ? (
         <div className="flex-1">
-          <EmailDashboard />
+          <EmailDashboard recruiters={data} />
         </div>
       ) : (
         <div className="flex-1 scrollable p-8">

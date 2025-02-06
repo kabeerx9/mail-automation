@@ -40,106 +40,132 @@ export class EmailController {
         res.json(recruiters);
     }
 
-    sendTestEmail = async (req: Request, res: Response) => {
+    sendSingleEmail = async (req: Request, res: Response) => {
         const startTime = performance.now();
-        const validatedData = testEmailSchema.parse(req.body);
-        logger.info('Schema validation time:', { time: performance.now() - startTime });
 
-        const prismaStartTime = performance.now();
-        const configuration = await prisma.configuration.findUnique({
-            where: {
-                userId: req.user?.id as string
-            }
-        });
-        logger.info('Prisma query time:', { time: performance.now() - prismaStartTime });
+        const { recruiterId } = req.params;
+        const { useAI } = req.body;
 
-        if (!configuration) {
-            throw new NotFoundError('Email configuration not found');
-        }
-
-        const testEmail = validatedData.email || configuration.EMAIL_FROM;
-        const useAI = validatedData.useAI;
-
-        const transporterStartTime = performance.now();
-        const transporter = this.generateTransporter(configuration);
-        logger.info('Transporter generation time:', { time: performance.now() - transporterStartTime });
-
-        if (!transporter) {
-            throw new ValidationError('Invalid email configuration');
-        }
-
-        if (!configuration.EMAIL_FROM || !configuration.EMAIL_SUBJECT ||
-            !configuration.SMTP_HOST || !configuration.SMTP_PORT ||
-            !configuration.SMTP_USER || !configuration.SMTP_PASS) {
-            throw new ValidationError('Incomplete email configuration');
-        }
-
-        console.log('useAI', useAI);
-
-        let emailBody: string;
-        if (useAI) {
-            try {
-                console.log('Generating AI content');
-                const response = await fetch('http://localhost:1234/v1/chat/completions', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        model: "mistral-nemo-instruct-2407",
-                        messages: [
-                            {
-                                role: "user",
-                                content: "Write an email from my side to a recruiter asking for a full-stack role I am interested in at their company. Keep the tone professional and friendly. Do not give anything extra in response, just direct HTML which will be the body of the email—no hi, no hello, no instructions, just direct response of HTML. Keep the sender name as Kabeer Joshi, email: "
-                            }
-                        ],
-                        temperature: 0.7,
-                        max_tokens: -1,
-                        stream: false
-                    })
+        try {
+            // Use a transaction for the database operations
+            const result = await prisma.$transaction(async (tx) => {
+                // get the recruiter from the database
+                const recruiter = await tx.recruiter.findUnique({
+                    where: {
+                        id: recruiterId,
+                        userId: req.user?.id as string
+                    }
                 });
 
-                if (!response.ok) {
-                    throw new Error(`AI request failed with status: ${response.status}`);
+                if (!recruiter) {
+                    throw new NotFoundError('Recruiter not found or you do not have permission to update it');
                 }
 
-                interface AIResponse {
-                    choices: Array<{
-                        message: {
-                            content: string;
-                        };
-                    }>;
+                const configuration = await tx.configuration.findUnique({
+                    where: {
+                        userId: req.user?.id as string
+                    }
+                });
+
+                if (!configuration) {
+                    throw new NotFoundError('Email configuration not found');
                 }
 
-                const data = await response.json() as AIResponse;
-                console.log('AI Response:', data);
-                emailBody = data.choices[0]?.message?.content || 'This is a test email from the email automation system.';
-            } catch (error: unknown) {
-                logger.error('Failed to generate AI content:', error instanceof Error ? error.message : 'Unknown error');
-                emailBody = 'This is a test email from the email automation system.';
-            }
-        } else {
-            emailBody = 'This is a test email from the email automation system.';
+                const transporter = this.generateTransporter(configuration);
+
+                if (!transporter) {
+                    throw new ValidationError('Invalid email configuration');
+                }
+
+                if (!configuration.EMAIL_FROM || !configuration.EMAIL_SUBJECT ||
+                    !configuration.SMTP_HOST || !configuration.SMTP_PORT ||
+                    !configuration.SMTP_USER || !configuration.SMTP_PASS) {
+                    throw new ValidationError('Incomplete email configuration');
+                }
+
+                let emailBody: string;
+                if (useAI) {
+                    try {
+                        console.log('Generating AI content');
+                        const response = await fetch('http://localhost:1234/v1/chat/completions', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                model: "mistral-nemo-instruct-2407",
+                                messages: [
+                                    {
+                                        role: "user",
+                                        content: "Write an email from my side to a recruiter asking for a full-stack role I am interested in at their company. Keep the tone professional and friendly. Do not give anything extra in response, just direct HTML which will be the body of the email—no hi, no hello, no instructions, just direct response of HTML. Keep the sender name as Kabeer Joshi, email: "
+                                    }
+                                ],
+                                temperature: 0.7,
+                                max_tokens: -1,
+                                stream: false
+                            })
+                        });
+
+                        if (!response.ok) {
+                            throw new Error(`AI request failed with status: ${response.status}`);
+                        }
+
+                        interface AIResponse {
+                            choices: Array<{
+                                message: {
+                                    content: string;
+                                };
+                            }>;
+                        }
+
+                        const data = await response.json() as AIResponse;
+                        console.log('AI Response:', data);
+                        emailBody = data.choices[0]?.message?.content || 'This is a test email from the email automation system.';
+                    } catch (error: unknown) {
+                        emailBody = 'This is a test email from the email automation system.';
+                    }
+                } else {
+                    emailBody = 'Hello from Kabeer Joshi, I am interested in the full-stack role at your company.';
+                }
+
+                const emailSendStartTime = performance.now();
+                await this.emailService.sendEmail(
+                    recruiter.email,
+                    emailBody,
+                    transporter,
+                    configuration
+                );
+                logger.info('Email sending time:', { time: performance.now() - emailSendStartTime });
+
+                // Update the recruiter data after successful email send
+                const updatedRecruiter = await tx.recruiter.update({
+                    where: {
+                        id: recruiterId,
+                        userId: req.user?.id as string
+                    },
+                    data: {
+                        reachOutFrequency: recruiter.reachOutFrequency + 1,
+                        lastReachOutDate: new Date().toISOString()
+                    }
+                });
+
+                return { recruiter, updatedRecruiter };
+            });
+
+            const totalTime = performance.now() - startTime;
+            logger.info('Total execution time:', { time: totalTime });
+
+            res.json({
+                success: true,
+                message: `Test email sent successfully to ${result.recruiter.email}`,
+                isAiGenerated: useAI,
+                executionTimeMs: totalTime
+            });
+
+        } catch (error) {
+            logger.error('Error in sendSingleEmail:', error);
+            throw error; // Let the error middleware handle it
         }
-
-        const emailSendStartTime = performance.now();
-        await this.emailService.sendEmail(
-            testEmail,
-            emailBody,
-            transporter,
-            configuration
-        );
-        logger.info('Email sending time:', { time: performance.now() - emailSendStartTime });
-
-        const totalTime = performance.now() - startTime;
-        logger.info('Total execution time:', { time: totalTime });
-
-        res.json({
-            success: true,
-            message: `Test email sent successfully to ${testEmail}`,
-            isAiGenerated: useAI,
-            executionTimeMs: totalTime
-        });
     }
 
     processEmails = async (req: Request, res: Response) => {

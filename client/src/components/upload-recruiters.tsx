@@ -75,7 +75,7 @@ const queryClient = useQueryClient();
 
   const uploadRecruitersMutation = useMutation({
     mutationFn : ()=>uploadRecruiters(parsedData),
-    onSuccess : (data)=>{
+    onSuccess : ()=>{
       toast.success('Recruiters uploaded successfully', {
         duration: 2000,
         icon: '✅'
@@ -95,7 +95,7 @@ const queryClient = useQueryClient();
 
   const handleUpload = () => {
     if (!selectedFile || !parsedData.length) return;
-    // TODO: Implement file upload logic
+    // upload the recruiters
     uploadRecruitersMutation.mutate();
   };
 

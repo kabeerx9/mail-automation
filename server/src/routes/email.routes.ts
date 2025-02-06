@@ -8,8 +8,8 @@ export const createEmailRouter = (emailController: EmailController): Router => {
 
   // Protected routes - require authentication
   router.get('/status', authMiddleware, asyncHandler(emailController.getStatus));
-  router.post('/send', authMiddleware, asyncHandler(emailController.processEmails));
-  router.post('/test', authMiddleware, asyncHandler(emailController.sendTestEmail));
+  router.post('/bulk', authMiddleware, asyncHandler(emailController.processEmails));
+  router.post('/:recruiterId', authMiddleware, asyncHandler(emailController.sendSingleEmail));
   return router;
 };
 

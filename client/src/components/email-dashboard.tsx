@@ -1,43 +1,27 @@
-import { useState, useEffect } from "react";
 import { Switch } from "@headlessui/react";
-import { StatusPanel } from "./status-panel";
-import { RecruiterTable } from "./recruiter-table";
-import { fetchRecruiters } from "../services/api";
+import { useState } from "react";
 import { Recruiter } from "../types";
+import { RecruiterTable } from "./recruiters/recruiter-table";
+import { AddRecruiterDialog } from "./recruiters/add-recruiter-dialog";
 
-export default function EmailDashboard() {
-  const [recruiters, setRecruiters] = useState<Recruiter[]>([]);
-  const [error, setError] = useState<string | null>(null);
-  const [useAI, setUseAI] = useState(() => {
-    const saved = localStorage.getItem("useAI");
-    return saved ? JSON.parse(saved) : false;
-  });
-
-  const loadData = async () => {
-    try {
-      const data = await fetchRecruiters();
-      setRecruiters(data);
-      setError(null);
-    } catch (err) {
-      setError("Failed to load recruiter data");
-      console.error("Error:", err);
-    }
-  };
-
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  useEffect(() => {
-    localStorage.setItem("useAI", JSON.stringify(useAI));
-  }, [useAI]);
+export default function EmailDashboard({recruiters} : {recruiters : Recruiter[]}) {
+  const [useAI, setUseAI] = useState(false);
+  const [isAddRecruiterOpen, setIsAddRecruiterOpen] = useState(false);
 
   return (
     <div className="container mx-auto px-4 py-8">
       <header className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">
-          Email Automation Dashboard
-        </h1>
+        <div className="flex justify-between items-center">
+          <h1 className="text-3xl font-bold text-gray-900">
+            Email Automation Dashboard
+          </h1>
+          <button
+            onClick={() => setIsAddRecruiterOpen(true)}
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          >
+            Add Recruiter
+          </button>
+        </div>
         <div className="mt-4 flex items-center">
           <Switch
             checked={useAI}
@@ -59,20 +43,12 @@ export default function EmailDashboard() {
         </div>
       </header>
 
-      {error ? (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-8">
-          {error}
-        </div>
-      ) : (
-        <>
-          <StatusPanel
-            recruiters={recruiters}
-            onRefresh={loadData}
-            useAI={useAI}
-          />
-          <RecruiterTable recruiters={recruiters} />
-        </>
-      )}
+      <RecruiterTable recruiters={recruiters} globalAIEnabled={useAI} />
+
+      <AddRecruiterDialog
+        isOpen={isAddRecruiterOpen}
+        onClose={() => setIsAddRecruiterOpen(false)}
+      />
     </div>
   );
 }

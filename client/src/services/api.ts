@@ -1,6 +1,5 @@
-import { Recruiter, EmailResponse } from '../types';
-import axiosInstance from './axios';
-import axios from './axios';
+import { EmailResponse, Recruiter } from '../types';
+import { default as axios, default as axiosInstance } from './axios';
 
 export interface SmtpConfig {
     SMTP_HOST: string;
@@ -12,14 +11,7 @@ export interface SmtpConfig {
     EMAIL_RATE_LIMIT: number;
 }
 
-export interface Recruiter {
-    id : string;
-    name :string;
-    company : string;
-    email : string;
-    lastReachOutDate : Date;
-    reachOutFrequency : number;
-}
+
 
 export const fetchRecruiters = async (): Promise<Recruiter[]> => {
     const response = await axiosInstance.get('/emails/status');
@@ -31,9 +23,8 @@ export const sendEmails = async (): Promise<EmailResponse> => {
     return response.data;
 };
 
-export const sendTestEmail = async (email: string, useAI: boolean = false): Promise<EmailResponse> => {
-    const response = await axiosInstance.post('/emails/test', {
-        email: email,
+export const sendSingleEmail = async (recruiterId: string, useAI: boolean = false): Promise<EmailResponse> => {
+    const response = await axiosInstance.post(`/emails/${recruiterId}`, {
         useAI: useAI
     });
     return response.data;
@@ -58,7 +49,8 @@ export const fetchConfiguration = async (): Promise<SmtpConfig | null> => {
         const response = await axios.get('/config');
         console.log("response", response.data);
         return response.data.data;
-    } catch (error) {
+    } catch (err) {
+        console.error("Error fetching configuration", err);
         return null;
     }
 };
@@ -67,3 +59,12 @@ export const uploadRecruiters = async(recruiters: {name: string, company: string
     const response = await axiosInstance.post('/recruiters/bulk', recruiters);
     return response.data;
 }
+
+export const addRecruiter = async (recruiter: {name: string, company: string, email: string}): Promise<Recruiter> => {
+    const response = await axiosInstance.post('/recruiters', recruiter);
+    return response.data;
+};
+
+export const deleteRecruiter = async (id: string): Promise<void> => {
+    await axiosInstance.delete(`/recruiters/${id}`);
+};

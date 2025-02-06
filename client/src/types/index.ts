@@ -1,11 +1,10 @@
 export interface Recruiter {
-    Name: string;
-    Email: string;
-    ReachOutCount: number;
-    Status: 'Pending' | 'Sent' | 'Failed';
-    LastContactDate: string | null;
-    Company: string;
-    Role: string;
+    id : string;
+    name :string;
+    company : string;
+    email : string;
+    lastReachOutDate : string;
+    reachOutFrequency : number;
 }
 
 export interface EmailResponse {
