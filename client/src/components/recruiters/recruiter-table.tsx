@@ -27,7 +27,7 @@ export function RecruiterTable({ recruiters, globalAIEnabled, isProcessing, onUp
         recruiterId?: string;
     }>({
         isOpen: false,
-        recruiterId: undefined 
+        recruiterId: undefined
     });
 
     const [aiSettings, setAiSettings] = useState<Record<string, boolean>>({});
@@ -138,6 +138,9 @@ export function RecruiterTable({ recruiters, globalAIEnabled, isProcessing, onUp
                                     Last Reach Out
                                 </th>
                                 <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
+                                    Reach Out Frequency
+                                </th>
+                                <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
                                     Use AI
                                 </th>
                                 <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
@@ -158,6 +161,9 @@ export function RecruiterTable({ recruiters, globalAIEnabled, isProcessing, onUp
                                     <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{recruiter.email}</td>
                                     <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                                         {formatDate(recruiter.lastReachOutDate)}
+                                    </td>
+                                    <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                                        {recruiter.reachOutFrequency}
                                     </td>
                                     <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                                         <Switch

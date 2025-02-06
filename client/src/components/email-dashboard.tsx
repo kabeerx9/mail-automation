@@ -1,23 +1,35 @@
 import { Switch } from "@headlessui/react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { EmailStatus, Recruiter } from "../types";
 import { RecruiterTable } from "./recruiters/recruiter-table";
 import { AddRecruiterDialog } from "./recruiters/add-recruiter-dialog";
 import { sendSingleEmail } from "../services/api";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import toast from "react-hot-toast";
 
 interface EmailState {
   status: EmailStatus;
   error?: string;
 }
 
-export default function EmailDashboard({recruiters: initialRecruiters} : {recruiters : Recruiter[]}) {
+export default function EmailDashboard({recruiters} : {recruiters : Recruiter[]}) {
   const [useAI, setUseAI] = useState(false);
   const [isAddRecruiterOpen, setIsAddRecruiterOpen] = useState(false);
-  const [recruiters] = useState<Recruiter[]>(initialRecruiters);
   const [emailStates, setEmailStates] = useState<Record<string, EmailState>>(() =>
-    Object.fromEntries(initialRecruiters.map(r => [r.id, { status: 'idle' as EmailStatus }]))
+    Object.fromEntries(recruiters.map(r => [r.id, { status: 'idle' as EmailStatus }]))
   );
   const [isSendingAll, setIsSendingAll] = useState(false);
+  const queryClient = useQueryClient();
+
+  // Update email states when recruiters change
+  useEffect(() => {
+    setEmailStates(current => {
+      const newStates = Object.fromEntries(
+        recruiters.map(r => [r.id, current[r.id] || { status: 'idle' as EmailStatus }])
+      );
+      return newStates;
+    });
+  }, [recruiters]);
 
   const BATCH_SIZE = 5;
 
@@ -29,47 +41,91 @@ export default function EmailDashboard({recruiters: initialRecruiters} : {recrui
   };
 
   const resetAllStatuses = () => {
-    setEmailStates(current =>
+    setEmailStates(
       Object.fromEntries(
-        Object.keys(current).map(id => [id, { status: 'idle' }])
+        recruiters.map(r => [r.id, { status: 'idle' }])
       )
     );
   };
 
   const sendEmailBatch = async (batch: Recruiter[]) => {
+    console.log('Sending batch:', batch);
     const promises = batch.map(async (recruiter) => {
       try {
         updateRecruiterStatus(recruiter.id, 'loading');
         const response = await sendSingleEmail(recruiter.id, useAI);
+        console.log('Response for', recruiter.id, ':', response);
         if (response.success) {
           updateRecruiterStatus(recruiter.id, 'success');
+          return { success: true, id: recruiter.id };
         } else {
           updateRecruiterStatus(recruiter.id, 'error', response.message);
+          return { success: false, id: recruiter.id, error: response.message };
         }
       } catch (error) {
+        console.error('Error sending email for', recruiter.id, ':', error);
         updateRecruiterStatus(recruiter.id, 'error', 'Failed to send email');
+        return { success: false, id: recruiter.id, error: 'Failed to send email' };
       }
     });
 
-    await Promise.all(promises);
+    return Promise.all(promises);
   };
 
-  const handleSendAll = async () => {
-    try {
-      setIsSendingAll(true);
-      resetAllStatuses();
-
+  const sendAllMutation = useMutation({
+    mutationFn: async () => {
+      console.log('Starting send all mutation');
       const pendingRecruiters = recruiters.filter(r => emailStates[r.id]?.status === 'idle');
+      console.log('Pending recruiters:', pendingRecruiters);
+      const results = [];
 
       for (let i = 0; i < pendingRecruiters.length; i += BATCH_SIZE) {
         const batch = pendingRecruiters.slice(i, i + BATCH_SIZE);
-        await sendEmailBatch(batch);
+        console.log('Processing batch', i / BATCH_SIZE + 1);
+        const batchResults = await sendEmailBatch(batch);
+        results.push(...batchResults);
       }
-    } catch (error) {
-      console.error('Error sending all emails:', error);
-    } finally {
+
+      return results;
+    },
+    onMutate: () => {
+      console.log('Mutation starting, resetting statuses');
+      setIsSendingAll(true);
+      resetAllStatuses();
+    },
+    onSuccess: (results) => {
+      console.log('Send all completed, results:', results);
+      const successCount = results.filter(r => r.success).length;
+      const failureCount = results.length - successCount;
+
+      if (successCount > 0 && failureCount === 0) {
+        toast.success(`Successfully sent ${successCount} emails`);
+      } else if (successCount > 0 && failureCount > 0) {
+        toast.success(`Sent ${successCount} emails, ${failureCount} failed`);
+      } else if (failureCount > 0) {
+        toast.error(`Failed to send ${failureCount} emails`);
+      }
+
+      // Invalidate queries to refresh data
+      queryClient.invalidateQueries({ queryKey: ['recruiters-check'] });
+    },
+    onError: (error) => {
+      console.error('Error in send all mutation:', error);
+      toast.error('Failed to send emails');
+    },
+    onSettled: () => {
+      console.log('Mutation settled, resetting sending state');
       setIsSendingAll(false);
     }
+  });
+
+  const handleSendAll = () => {
+    console.log('Send all clicked');
+    if (recruiters.length === 0) {
+      toast.error('No recruiters to send emails to');
+      return;
+    }
+    sendAllMutation.mutate();
   };
 
   const isAnySending = Object.values(emailStates).some(state => state.status === 'loading') || isSendingAll;
@@ -84,9 +140,9 @@ export default function EmailDashboard({recruiters: initialRecruiters} : {recrui
           <div className="space-x-4">
             <button
               onClick={handleSendAll}
-              disabled={isAnySending}
+              disabled={isAnySending || recruiters.length === 0}
               className={`inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white ${
-                isAnySending
+                isAnySending || recruiters.length === 0
                   ? 'bg-gray-400 cursor-not-allowed'
                   : 'bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500'
               }`}
