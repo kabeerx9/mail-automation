@@ -129,13 +129,18 @@ export class EmailController {
                 }
 
                 const emailSendStartTime = performance.now();
-                await this.emailService.sendEmail(
-                    recruiter.email,
-                    emailBody,
-                    transporter,
-                    configuration
-                );
-                logger.info('Email sending time:', { time: performance.now() - emailSendStartTime });
+                try {
+                    await this.emailService.sendEmail(
+                        recruiter.email,
+                        emailBody,
+                        transporter,
+                        configuration
+                    );
+                    logger.info('Email sending time:', { time: performance.now() - emailSendStartTime });
+                } catch (error) {
+                    logger.error('Failed to send email:', error);
+                    throw new Error(`Failed to send email to ${recruiter.email}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+                }
 
                 // Update the recruiter data after successful email send
                 const updatedRecruiter = await tx.recruiter.update({
