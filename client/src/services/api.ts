@@ -62,3 +62,8 @@ export const fetchConfiguration = async (): Promise<SmtpConfig | null> => {
         return null;
     }
 };
+
+export const uploadRecruiters = async(recruiters: {name: string, company: string, email: string}[]) => {
+    const response = await axiosInstance.post('/recruiters/bulk', recruiters);
+    return response.data;
+}

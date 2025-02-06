@@ -1,13 +1,18 @@
-import { useCallback, useEffect, useState } from 'react';
-import { useDropzone, FileRejection } from 'react-dropzone';
-import toast from 'react-hot-toast';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import Papa from 'papaparse';
+import { useCallback, useEffect, useState } from 'react';
+import { FileRejection, useDropzone } from 'react-dropzone';
+import toast from 'react-hot-toast';
+import { uploadRecruiters } from '../services/api';
 
 interface RecruiterData {
-  [key: string]: string;
+  name: string;
+  company: string;
+  email: string;
 }
 
 export default function UploadRecruiters() {
+const queryClient = useQueryClient();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [parsedData, setParsedData] = useState<RecruiterData[]>([]);
   const [fileStats, setFileStats] = useState<{
@@ -68,9 +73,30 @@ export default function UploadRecruiters() {
     }
   }, [selectedFile]);
 
+  const uploadRecruitersMutation = useMutation({
+    mutationFn : ()=>uploadRecruiters(parsedData),
+    onSuccess : (data)=>{
+      toast.success('Recruiters uploaded successfully', {
+        duration: 2000,
+        icon: '✅'
+      });
+      // invalidate the query to refetch the data
+      queryClient.invalidateQueries({
+        queryKey : ['recruiters-check']
+      })
+    },
+    onError : ()=>{
+      toast.error('Error uploading recruiters', {
+        duration: 2000,
+        icon: '❌'
+      });
+    }
+  })
+
   const handleUpload = () => {
     if (!selectedFile || !parsedData.length) return;
     // TODO: Implement file upload logic
+    uploadRecruitersMutation.mutate();
   };
 
   const { getRootProps, getInputProps, isDragActive, isDragReject } = useDropzone({
@@ -218,17 +244,39 @@ export default function UploadRecruiters() {
       <div className="mt-6 flex justify-end">
         <button
           onClick={handleUpload}
-          disabled={!selectedFile || !parsedData.length}
+          disabled={!selectedFile || !parsedData.length || uploadRecruitersMutation.isPending}
           className={`
             px-6 py-2.5 rounded-lg font-medium text-sm
             transition-all duration-200
-            ${selectedFile && parsedData.length
+            ${selectedFile && parsedData.length && !uploadRecruitersMutation.isPending
               ? 'bg-blue-600 text-white hover:bg-blue-700 focus:ring-4 focus:ring-blue-200'
               : 'bg-gray-100 text-gray-400 cursor-not-allowed'
             }
           `}
         >
-          Upload Recruiters
+          {uploadRecruitersMutation.isPending ? (
+            <div className="flex items-center gap-2">
+              <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                  fill="none"
+                />
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                />
+              </svg>
+              Uploading...
+            </div>
+          ) : (
+            'Upload Recruiters'
+          )}
         </button>
       </div>
 
